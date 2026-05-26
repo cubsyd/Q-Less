@@ -1,0 +1,305 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #f4f4f4;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.chatbot-wrapper {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  background: white;
+}
+
+.sidebar {
+  background: #f6f8f4;
+  border-right: 1px solid #e5e5e5;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.logo {
+  color: #2c7a09;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-nav a {
+  text-decoration: none;
+  color: #2d2d2d;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #ececec;
+}
+
+.sidebar-nav a.active {
+  background: #eef8d9;
+  color: #2c7a09;
+  border-color: #82c91e;
+}
+
+.new-chat-button,
+.logout-button {
+  margin-top: auto;
+  border: none;
+  border-radius: 999px;
+  background: #6ba308;
+  color: white;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.new-chat-button {
+  margin-top: 0;
+  background: #2c7a09;
+}
+
+.logout-button {
+  margin-top: auto;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.chat-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #2c7a09;
+}
+
+.chat-title p {
+  margin: 0.25rem 0 0;
+  color: #5a5a5a;
+  font-size: 0.92rem;
+}
+
+.badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #82c91e;
+  color: white;
+  font-weight: 700;
+}
+
+.chat-title h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.chat-messages {
+  flex: 1;
+  padding: 1.5rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message {
+  display: flex;
+}
+
+.message.user {
+  justify-content: flex-start;
+}
+
+.message.bot {
+  justify-content: flex-end;
+}
+
+.bubble {
+  max-width: 68%;
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  line-height: 1.45;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.message.user .bubble {
+  background: #f7f7f7;
+  color: #2d2d2d;
+}
+
+.message.bot .bubble {
+  background: #eef8d9;
+  color: #2c7a09;
+}
+
+.bubble.structured {
+  min-width: min(720px, 100%);
+  color: #28410c;
+}
+
+.reply-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.reply-summary {
+  margin: 0 0 1rem;
+}
+
+.reply-block {
+  margin-top: 1rem;
+  padding: 0.85rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.reply-block.warning {
+  background: #fff3e2;
+}
+
+.reply-block.alt {
+  background: #eef6ff;
+}
+
+.reply-block h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+}
+
+.product-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.product-item {
+  background: white;
+  border: 1px solid #dfe9cd;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.product-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #264108;
+}
+
+.product-meta span {
+  color: #6c7a58;
+  font-size: 0.88rem;
+}
+
+.product-details {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+  font-size: 0.92rem;
+  color: #455539;
+}
+
+.product-item p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.steps-list {
+  margin: 0;
+  padding-left: 1.15rem;
+}
+
+.steps-list li + li {
+  margin-top: 0.45rem;
+}
+
+.reply-notes {
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: #4d6244;
+}
+
+.reply-notes p {
+  margin: 0.3rem 0 0;
+}
+
+.loading-bubble {
+  opacity: 0.9;
+}
+
+.chat-input {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  background: white;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 0.9rem 1rem;
+  border-radius: 999px;
+  border: 2px solid #82c91e;
+  font-size: 0.95rem;
+}
+
+.chat-input button {
+  border: none;
+  border-radius: 999px;
+  padding: 0.9rem 1.25rem;
+  background: #6ba308;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chat-input button:disabled,
+.chat-input input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .chatbot-wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    gap: 1rem;
+  }
+
+  .bubble {
+    max-width: 100%;
+  }
+
+  .bubble.structured {
+    min-width: 100%;
+  }
+
+  .product-meta {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .chat-input {
+    flex-direction: column;
+  }
+}

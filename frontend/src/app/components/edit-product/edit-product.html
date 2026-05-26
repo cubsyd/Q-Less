@@ -1,0 +1,87 @@
+<div class="edit-wrapper">
+  <header class="main-header">
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+    </nav>
+    <div class="top-actions">
+      <button class="btn-logout" (click)="goHome()">Cerrar Sesion</button>
+    </div>
+  </header>
+
+  <main class="edit-content">
+    <form (ngSubmit)="updateProduct()" class="edit-form" autocomplete="off">
+      <h2 class="form-title">Editar Producto</h2>
+
+      <div *ngIf="errors.length > 0" class="alerts-container">
+        <div *ngFor="let alert of errors" [ngClass]="'alert alert-' + alert.type" role="alert">
+          {{ alert.message }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre de producto</label>
+          <input type="text" [(ngModel)]="product.nombre" name="nombre" required [disabled]="isLoading" />
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <select [(ngModel)]="product.categoria" name="categoria" [disabled]="isLoading" required>
+            <option value="">Selecciona una categoria</option>
+            <option *ngFor="let categoryOption of categories" [value]="categoryOption">
+              {{ categoryOption }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Precio del producto</label>
+          <input type="number" [(ngModel)]="product.precio" name="precio" placeholder="$0.00" required [disabled]="isLoading" />
+        </div>
+        <div class="form-group">
+          <label>Cantidad de producto en stock</label>
+          <input type="number" [(ngModel)]="product.stock" name="stock" placeholder="0" required [disabled]="isLoading" />
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Descripcion del producto</label>
+        <textarea [(ngModel)]="product.descripcion" name="descripcion" placeholder="Describe tu producto..." required [disabled]="isLoading"></textarea>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Imagen del producto</label>
+        <div class="image-upload-section">
+          <input type="file" (change)="onFileSelected($event)" accept="image/png,image/jpg,image/jpeg" [disabled]="isLoading" style="display: none;" #fileInput />
+          <div class="image-placeholders">
+            <div class="image-placeholder" (click)="fileInput.click()">
+              <img *ngIf="previewUrl || product.image_path" [src]="previewUrl || product.image_path" alt="Imagen actual" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
+              <span *ngIf="!previewUrl && !product.image_path">+</span>
+              <button *ngIf="previewUrl" type="button" class="btn-remove-image" (click)="clearSelectedImage(); $event.stopPropagation();">X</button>
+            </div>
+            <div class="image-placeholder-empty"></div>
+            <div class="image-placeholder-empty"></div>
+            <div class="image-placeholder-empty"></div>
+            <div class="image-placeholder-empty"></div>
+          </div>
+          <small class="text-muted">Formatos: PNG, JPG, JPEG (max. 5MB)</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="cancel()">Cancelar</button>
+        <button type="submit" class="btn-update" [disabled]="isLoading">
+          {{ isLoading ? 'Actualizando...' : 'Actualizar producto' }}
+        </button>
+        <button type="button" class="btn-delete" (click)="deleteProduct()" [disabled]="isLoading">
+          Eliminar producto
+        </button>
+      </div>
+    </form>
+  </main>
+</div>

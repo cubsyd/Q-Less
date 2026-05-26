@@ -1,0 +1,50 @@
+<div class="main-container">
+  <div class="section left-section">
+    <div class="text-content">
+      <h1 class="logo-title">Q-LESS</h1>
+      <div class="underline"></div>
+      <p class="description-text">
+        Tu papelería virtual del CBA - SENA. Gestiona tus pedidos de forma rápida y sencilla.
+      </p>
+    </div>
+  </div>
+
+  <div class="section right-section">
+    <div class="login-card">
+      <div class="profile-circle">
+        <img src="https://img.icons8.com/?size=100&id=7820&format=png&color=FFFFFF" alt="Carrito Q-LESS" class="cart-icon-img">
+      </div>
+
+      <div *ngIf="errors.length > 0" class="alerts-container">
+        <div *ngFor="let alert of errors" [ngClass]="'alert alert-' + alert.type" role="alert">
+          {{ alert.message }}
+        </div>
+      </div>
+
+      <form (ngSubmit)="iniciarSesion()">
+        <div class="input-group">
+          <i class="bi bi-person-fill"></i>
+          <input type="email" [(ngModel)]="credentials.email" name="email" placeholder="Correo o número" required>
+        </div>
+
+        <div class="input-group">
+          <i class="bi bi-lock-fill"></i>
+          <input type="password" [(ngModel)]="credentials.password" name="password" placeholder="Contraseña" required>
+        </div>
+
+        <button type="submit" class="login-button">Inicia sesión</button>
+
+        <div class="divider">
+          <span>O</span>
+        </div>
+
+        <div class="register-container">
+          <p class="small-text">¿No tienes una cuenta?</p>
+          <button type="button" class="register-button" routerLink="/register">
+            Crea una cuenta
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

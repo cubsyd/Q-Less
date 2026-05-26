@@ -1,0 +1,187 @@
+<div class="cart-wrapper">
+
+  <header class="main-header">
+
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a routerLink="/chatbot">ChatBot</a>
+      <a routerLink="/mis-pedidos">Mis pedidos</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="btn-logout" (click)="logout()">
+        Cerrar Sesion
+      </button>
+    </div>
+
+  </header>
+
+  <main class="cart-content">
+
+    <section class="cart-panel">
+
+      <div class="section-head">
+
+        <div>
+          <h2>Carrito de compras</h2>
+          <p>Consulta los productos agregados antes de pagar.</p>
+        </div>
+
+        <button
+          class="btn-clear"
+          type="button"
+          (click)="clearCart()"
+          [disabled]="cartItems.length === 0">
+
+          Vaciar carrito
+        </button>
+      </div>
+
+      <div
+        *ngIf="cartItems.length > 0; else emptyCart"
+        class="cart-list">
+
+        <div *ngIf="cartMessage" class="cart-message">
+          {{ cartMessage }}
+        </div>
+
+        <article
+          class="cart-item"
+          *ngFor="let item of cartItems; trackBy: trackByProductId">
+
+          <div class="item-image">
+            <img
+              [src]="getImageUrl(item)"
+              (error)="onImageError($event)"
+              [alt]="item.nombre" />
+          </div>
+
+          <div class="item-info">
+
+            <h3>{{ item.nombre }}</h3>
+
+            <p>Cantidad: {{ item.cantidad }}</p>
+
+            <p>
+              Precio unitario:
+              {{ item.precio }} Pesos
+            </p>
+
+            <p class="item-stock">
+              Disponibles restantes:
+              {{ item.stock_available ?? 0 }}
+            </p>
+
+            <p class="reservation-time">
+              Reserva activa por
+              {{ getRemainingTime(item) }}
+            </p>
+          </div>
+
+          <div class="item-actions">
+
+            <strong>
+              {{ item.precio * item.cantidad }} Pesos
+            </strong>
+
+            <div class="quantity-actions">
+
+              <button
+                type="button"
+                class="btn-qty"
+                (click)="decreaseItem(item.id)"
+                [disabled]="isItemLoading(item.id)">
+
+                -
+              </button>
+
+              <span class="qty-value">
+                {{ item.cantidad }}
+              </span>
+
+              <button
+                type="button"
+                class="btn-qty"
+                (click)="increaseItem(item)"
+                [disabled]="!canIncrease(item)">
+
+                +
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="btn-remove"
+              (click)="removeItem(item.id)"
+              [disabled]="isItemLoading(item.id)">
+
+              Quitar
+            </button>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #emptyCart>
+
+        <div class="empty-state">
+
+          <h3>Tu carrito esta vacio</h3>
+
+          <p>
+            Agrega productos desde el catalogo para verlos aqui.
+          </p>
+
+          <a routerLink="/productos" class="btn-shop">
+            Ir a productos
+          </a>
+        </div>
+      </ng-template>
+    </section>
+
+    <aside class="summary-panel">
+
+      <h3>Resumen</h3>
+
+      <div class="summary-row">
+        <span>Productos</span>
+        <strong>{{ getTotalItems() }}</strong>
+      </div>
+
+      <div class="summary-products" *ngIf="cartItems.length > 0">
+        <h4>Productos agregados</h4>
+
+        <div class="summary-product" *ngFor="let item of cartItems; trackBy: trackByProductId">
+          <span>
+            {{ item.nombre }}
+            <strong *ngIf="item.cantidad > 1">(x{{ item.cantidad }})</strong>
+          </span>
+          <small>{{ item.precio * item.cantidad }} Pesos</small>
+        </div>
+      </div>
+
+      <div class="summary-row total">
+        <span>Total</span>
+        <strong>{{ total }} Pesos</strong>
+      </div>
+
+      <button
+        type="button"
+        class="btn-pay"
+        (click)="checkout()"
+        [disabled]="cartItems.length === 0 || isRedirectingToPayment">
+
+        {{
+          isRedirectingToPayment
+            ? 'Abriendo Mercado Pago...'
+            : 'Pagar con Mercado Pago'
+        }}
+
+      </button>
+    </aside>
+  </main>
+</div>

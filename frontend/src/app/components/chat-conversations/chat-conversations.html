@@ -1,0 +1,37 @@
+<div class="conversations-wrapper">
+  <aside class="sidebar">
+    <div class="logo">Q-LESS</div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/home">Perfil</a>
+      <a routerLink="/chatbot">ChatBot</a>
+      <a routerLink="/mis-conversaciones" class="active">Mis conversaciones</a>
+    </nav>
+
+    <button type="button" class="new-chat-button" (click)="startNewConversation()">Nueva conversacion</button>
+    <button type="button" class="logout-button" (click)="logout()">Cerrar Sesion</button>
+  </aside>
+
+  <main class="conversations-panel">
+    <header class="conversations-header">
+      <h1>Mis conversaciones</h1>
+      <p>Consulta los chats que has tenido con la IA de Q-LESS.</p>
+    </header>
+
+    <p class="empty-message" *ngIf="message">{{ message }}</p>
+
+    <section class="conversation-list" *ngIf="conversations.length > 0">
+      <article class="conversation-card" *ngFor="let conversation of conversations" (click)="openConversation(conversation)">
+        <div class="conversation-info">
+          <h2>{{ conversation.title }}</h2>
+          <p>{{ getPreview(conversation) }}</p>
+          <span>{{ getDate(conversation.updatedAt) }}</span>
+        </div>
+
+        <button type="button" class="delete-button" (click)="deleteConversation(conversation, $event)">
+          Eliminar
+        </button>
+      </article>
+    </section>
+  </main>
+</div>

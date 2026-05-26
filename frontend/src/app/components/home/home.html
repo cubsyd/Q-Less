@@ -1,0 +1,89 @@
+<div class="home-wrapper">
+  <header class="main-header">
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a *ngIf="!isAdmin" routerLink="/chatbot">ChatBot</a>
+      <a *ngIf="!isAdmin" routerLink="/mis-pedidos">Mis pedidos</a>
+      <a *ngIf="isAdmin" routerLink="/pedidos">Pedidos</a>
+    </nav>
+    <div class="top-actions">
+      <input type="search" placeholder="Buscar productos..." [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
+      <a *ngIf="!isAdmin" class="cart-link" routerLink="/carrito" aria-label="Ir al carrito">
+        <span class="cart-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M8 19a2 2 0 1 0 0 4a2 2 0 0 0 0-4Zm9 0a2 2 0 1 0 0 4a2 2 0 0 0 0-4ZM5.2 4l1 2H21l-2 7H8l-1-2H4V9h1.8L3 3H1V1h3.2l1 3Z"/>
+          </svg>
+        </span>
+        <span>Carrito</span>
+        <strong class="cart-badge">{{ cartCount }}</strong>
+      </a>
+      <a *ngIf="isAdmin" class="btn-create" routerLink="/nuevo-producto">+ Crear Producto</a>
+      <button class="btn-logout" (click)="logout()">Cerrar Sesion</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h2>Bienvenido, {{ userName }}</h2>
+    <p>Administra tus productos desde un panel moderno y rapido.</p>
+  </section>
+
+  <main class="content-section">
+    <aside class="sidebar-colecciones">
+      <h3>Coleccion</h3>
+      <div class="collection-list">
+        <button
+          *ngFor="let category of categories"
+          type="button"
+          class="collection-item"
+          [class.active]="selectedCategory === category"
+          (click)="setCategory(category)"
+        >
+          {{ category }}
+        </button>
+      </div>
+    </aside>
+
+    <section class="productos-section">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Productos favoritos</h2>
+          <p class="section-copy">Explora el inventario disponible de la papeleria virtual desde el inicio.</p>
+        </div>
+      </div>
+
+      <div *ngIf="cartMessage" class="cart-feedback">
+        {{ cartMessage }}
+      </div>
+
+      <div *ngIf="filteredProducts.length > 0" class="products-grid">
+        <article *ngFor="let p of filteredProducts" class="product-card">
+          <div class="product-image">
+            <img [src]="getImageUrl(p)" (error)="onImageError($event)" alt="{{ p.nombre }}" />
+          </div>
+          <div class="product-body">
+            <h3 class="product-name">{{ p.nombre }}</h3>
+            <p class="product-price">{{ p.precio }} Pesos</p>
+            <p class="product-description">
+              {{ p.descripcion || 'Producto disponible en catalogo.' }}
+            </p>
+            <div class="product-actions">
+              <button *ngIf="!isAdmin" type="button" class="btn-add" [class.in-cart]="isInCart(p.id)" [disabled]="isAddingToCart(p.id)" (click)="addToCart(p)">
+                {{ isAddingToCart(p.id) ? 'Agregando...' : (isInCart(p.id) ? 'Agregar mas' : 'Agregar') }}
+              </button>
+              <a *ngIf="isAdmin" class="btn-edit" [routerLink]="['/editar-producto', p.id]" [state]="{ product: p }">Editar</a>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div *ngIf="filteredProducts.length === 0" class="empty-state">
+        <p *ngIf="searchText.trim().length > 0">No se encontraron productos para "{{ searchText }}"</p>
+        <p *ngIf="searchText.trim().length === 0">No hay productos de momento. Crea el primero.</p>
+      </div>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,120 @@
+<div class="chatbot-wrapper">
+  <aside class="sidebar">
+    <div class="logo">Q-LESS</div>
+
+    <nav class="sidebar-nav">
+      <a routerLink="/home">Perfil</a>
+      <a routerLink="/chatbot" class="active">ChatBot</a>
+      <a routerLink="/mis-conversaciones">Mis conversaciones</a>
+    </nav>
+
+    <button type="button" class="new-chat-button" (click)="startNewConversation()">Nueva conversacion</button>
+    <button type="button" class="logout-button" (click)="logout()">Salir del ChatBot</button>
+  </aside>
+
+  <main class="chat-panel">
+    <header class="chat-header">
+      <div class="chat-title">
+        <span class="badge">Q</span>
+        <div>
+          <h1>ChatBot</h1>
+          <p>Asistente de materiales conectado al stock de la papeleria.</p>
+        </div>
+      </div>
+    </header>
+
+    <section class="chat-messages">
+      <article *ngFor="let message of conversations; trackBy: trackByIndex" class="message" [class.user]="message.role === 'user'" [class.bot]="message.role === 'bot'">
+        <div class="bubble" [class.structured]="!!message.reply">
+          <ng-container *ngIf="!message.reply">
+            {{ message.text }}
+          </ng-container>
+
+          <ng-container *ngIf="message.reply as reply">
+            <div class="reply-title">{{ reply.project_title }}</div>
+            <p class="reply-summary">{{ reply.summary }}</p>
+
+            <div class="reply-block" *ngIf="reply.available_products.length > 0">
+              <h3>Disponibles</h3>
+              <div class="product-list">
+                <article class="product-item" *ngFor="let product of reply.available_products">
+                  <div class="product-meta">
+                    <strong>{{ product.nombre }}</strong>
+                    <span>{{ product.categoria || 'Sin categoria' }}</span>
+                  </div>
+                  <div class="product-details">
+                    <span>Precio: {{ product.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+                    <span>Stock: {{ product.stock }}</span>
+                  </div>
+                  <p>{{ product.reason }}</p>
+                </article>
+              </div>
+            </div>
+
+            <div class="reply-block warning" *ngIf="reply.unavailable_products.length > 0">
+              <h3>Sin stock</h3>
+              <div class="product-list">
+                <article class="product-item" *ngFor="let product of reply.unavailable_products">
+                  <div class="product-meta">
+                    <strong>{{ product.nombre }}</strong>
+                    <span>{{ product.categoria || 'Sin categoria' }}</span>
+                  </div>
+                  <div class="product-details">
+                    <span>Precio: {{ product.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+                    <span>Stock: {{ product.stock }}</span>
+                  </div>
+                  <p>{{ product.reason }}</p>
+                </article>
+              </div>
+            </div>
+
+            <div class="reply-block alt" *ngIf="reply.alternative_products.length > 0">
+              <h3>Alternativas sugeridas</h3>
+              <div class="product-list">
+                <article class="product-item" *ngFor="let product of reply.alternative_products">
+                  <div class="product-meta">
+                    <strong>{{ product.nombre }}</strong>
+                    <span>{{ product.categoria || 'Sin categoria' }}</span>
+                  </div>
+                  <div class="product-details">
+                    <span>Precio: {{ product.precio | currency:'COP':'symbol':'1.0-0' }}</span>
+                    <span>Stock: {{ product.stock }}</span>
+                  </div>
+                  <p>{{ product.reason }}</p>
+                </article>
+              </div>
+            </div>
+
+            <div class="reply-block" *ngIf="reply.steps.length > 0">
+              <h3>Como lo puedes hacer</h3>
+              <ol class="steps-list">
+                <li *ngFor="let step of reply.steps">{{ step }}</li>
+              </ol>
+            </div>
+
+            <div class="reply-notes" *ngIf="reply.notes.length > 0">
+              <p *ngFor="let note of reply.notes">{{ note }}</p>
+            </div>
+          </ng-container>
+        </div>
+      </article>
+
+      <article class="message bot" *ngIf="isLoading">
+        <div class="bubble loading-bubble">
+          Consultando el inventario para recomendarte materiales...
+        </div>
+      </article>
+    </section>
+
+    <form class="chat-input" (ngSubmit)="sendMessage()">
+      <input
+        type="text"
+        [(ngModel)]="prompt"
+        name="prompt"
+        placeholder="Ejemplo: Quiero hacer una maqueta del sistema solar"
+        [disabled]="isLoading"
+      />
+      <button type="submit" [disabled]="isLoading || !prompt.trim()">Enviar</button>
+    </form>
+  </main>
+</div>

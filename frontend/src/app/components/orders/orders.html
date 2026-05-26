@@ -1,0 +1,113 @@
+<div class="orders-wrapper">
+
+  <header class="main-header">
+
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a routerLink="/pedidos" class="active-link">Pedidos</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="btn-logout" (click)="logout()">
+        Cerrar Sesion
+      </button>
+    </div>
+
+  </header>
+
+  <main class="orders-content">
+
+    <section class="orders-panel">
+
+      <div class="section-head">
+        <div>
+          <h2>Panel de pedidos</h2>
+          <p>
+            Bienvenido, {{ userName }}.
+            Aqui apareceran los pedidos de los usuarios.
+          </p>
+        </div>
+      </div>
+
+      <p class="orders-message" *ngIf="ordersMessage">
+        {{ ordersMessage }}
+      </p>
+
+      <div class="orders-list" *ngIf="!isLoadingOrders || pedidos.length > 0">
+
+        <div class="order-card" *ngFor="let pedido of pedidos">
+
+          <div class="order-info">
+
+            <h3>
+              Pedido #{{ pedido.order_number }}
+            </h3>
+
+            <p>
+              <strong>Usuario:</strong>
+              {{ pedido.user?.name }}
+            </p>
+
+            <p>
+              <strong>Telefono:</strong>
+              {{ pedido.user?.telefono }}
+            </p>
+
+            <p>
+              <strong>Estado:</strong>
+              {{ pedido.status }}
+            </p>
+
+            <p>
+              <strong>Total:</strong>
+              {{ pedido.total }} Pesos
+            </p>
+
+            <p class="expire-text">
+              Expira:
+              {{ getRemainingTime(pedido.expires_at) }}
+            </p>
+
+            <div class="order-items" *ngIf="pedido.items?.length > 0">
+              <strong>Productos pedidos:</strong>
+
+              <div class="order-item" *ngFor="let item of pedido.items">
+                <span>{{ getProductLine(item) }}</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="order-actions">
+
+            <button class="btn-success" [disabled]="pedido.status === 'expirado'" (click)="marcarEntregado(pedido)">
+
+              Entregado
+            </button>
+
+            <button class="btn-danger" [disabled]="pedido.status === 'expirado'" (click)="marcarNoEntregado(pedido)">
+
+              No entregado
+            </button>
+
+            <button class="btn-warning" (click)="eliminarPedido(pedido)">
+
+              Eliminar pedido
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>

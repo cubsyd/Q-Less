@@ -1,0 +1,287 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #82c91e;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1d3323;
+}
+
+.products-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+  border-radius: 0 0 16px 16px;
+}
+
+.brand h1 {
+  margin: 0;
+  color: #2c7a09;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: #457520;
+  font-weight: 600;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.top-actions input {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+}
+
+.cart-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: #2d2d2d;
+  background: #f5f9f1;
+  border: 1px solid #dce8cc;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.cart-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+}
+
+.cart-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: #4a7a18;
+}
+
+.cart-badge {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #6ba308;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  padding: 0 0.35rem;
+}
+
+.btn-logout,
+.btn-create,
+.btn-add,
+.btn-edit {
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-logout {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-create,
+.btn-add {
+  background: #6ba308;
+  color: white;
+}
+
+.btn-add.in-cart {
+  background: #3f7d0f;
+}
+
+.btn-edit {
+  background: #f2c94c;
+  color: #3b2d00;
+}
+
+.content-section {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem 2rem 2rem;
+  flex: 1;
+}
+
+.sidebar-colecciones,
+.productos-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-colecciones h3 {
+  margin: 0 0 1rem 0;
+}
+
+.collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.collection-item {
+  width: 100%;
+  border: 1px solid #e6e6e6;
+  background: #f7f7f7;
+  padding: 0.8rem;
+  border-radius: 8px;
+  text-align: left;
+  color: #4f4f4f;
+  cursor: pointer;
+}
+
+.collection-item.active {
+  background: #eef8d9;
+  border-color: #82c91e;
+  color: #2c7a09;
+}
+
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  margin: 0;
+  color: #333;
+}
+
+.section-copy {
+  margin: 0.35rem 0 0;
+  color: #6b6b6b;
+}
+
+.cart-feedback {
+  margin-bottom: 1rem;
+  background: #fff3e2;
+  color: #8a4f00;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+}
+
+.products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1.25rem;
+}
+
+.product-card {
+  border: 1px solid #ededed;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.product-image {
+  height: 150px;
+  background: #ececec;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-body {
+  padding: 1rem;
+}
+
+.product-name {
+  margin: 0 0 0.5rem;
+  color: #2d2d2d;
+}
+
+.product-price {
+  margin: 0 0 0.75rem;
+  color: #2c7a09;
+  font-weight: 700;
+}
+
+.product-stock-warning {
+  margin: -0.35rem 0 0.75rem;
+  color: #c62828;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.product-description {
+  margin: 0 0 1rem;
+  color: #6d6d6d;
+  font-size: 0.92rem;
+  min-height: 2.8rem;
+}
+
+.product-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.empty-state {
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #909090;
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .content-section {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+
+  .top-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .top-actions input,
+  .btn-logout {
+    width: 100%;
+  }
+
+  .section-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

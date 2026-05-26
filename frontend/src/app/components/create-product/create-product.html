@@ -1,0 +1,99 @@
+<div class="create-wrapper">
+  <header class="main-header">
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a href="#">Blog</a>
+    </nav>
+    <div class="top-actions">
+      <button class="btn-logout" (click)="goHome()">Cerrar Sesion</button>
+    </div>
+  </header>
+
+  <main class="create-content">
+    <form (ngSubmit)="saveProduct()" class="create-form" autocomplete="off">
+      <h2 class="form-title">Crear Producto</h2>
+
+      <div *ngIf="errors.length > 0" class="alerts-container">
+        <div *ngFor="let alert of errors" [ngClass]="'alert alert-' + alert.type" role="alert">
+          {{ alert.message }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nombre de producto</label>
+          <input type="text" [(ngModel)]="name" name="name" required [disabled]="isLoading" />
+        </div>
+        <div class="form-group">
+          <label>Categoria</label>
+          <select [(ngModel)]="category" name="category" [disabled]="isLoading" required>
+            <option value="">Selecciona una categoria</option>
+            <option *ngFor="let categoryOption of categories" [value]="categoryOption">
+              {{ categoryOption }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Precio del producto</label>
+          <input type="number" [(ngModel)]="price" name="price" placeholder="$0.00" required [disabled]="isLoading" />
+        </div>
+        <div class="form-group">
+          <label>Cantidad de producto en stock</label>
+          <input type="number" [(ngModel)]="stock" name="stock" placeholder="0" required [disabled]="isLoading" />
+        </div>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Descripcion del producto</label>
+        <textarea [(ngModel)]="description" name="description" placeholder="Describe tu producto..." required [disabled]="isLoading"></textarea>
+      </div>
+
+      <div class="form-group full-width">
+        <label>Imagen del producto</label>
+        <div class="image-upload-section">
+          <input type="file" (change)="onFileSelected($event)" accept="image/png,image/jpg,image/jpeg" [disabled]="isLoading" style="display: none;" #fileInput />
+          <div class="image-placeholders">
+            <div class="image-placeholder" (click)="fileInput.click()">
+              <img *ngIf="imagePreview" [src]="imagePreview" alt="Vista previa" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
+              <span *ngIf="!imagePreview">+</span>
+              <button *ngIf="imagePreview" type="button" class="btn-remove-image" (click)="clearImage(); $event.stopPropagation();">X</button>
+            </div>
+            <div class="image-placeholder-empty"></div>
+            <div class="image-placeholder-empty"></div>
+            <div class="image-placeholder-empty"></div>
+            <div class="image-placeholder-empty"></div>
+          </div>
+          <small class="text-muted">Formatos: PNG, JPG, JPEG (max. 5MB)</small>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn-cancel" (click)="cancel()">Cancelar</button>
+        <button type="submit" class="btn-create" [disabled]="isLoading">
+          {{ isLoading ? 'Guardando...' : 'Crear producto' }}
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <div *ngIf="showModal" class="modal-backdrop">
+    <div class="status-modal" [class.error]="modalType === 'error'">
+      <div class="status-icon" [class.error]="modalType === 'error'">
+        <span *ngIf="modalType === 'success'">OK</span>
+        <span *ngIf="modalType === 'error'">!</span>
+      </div>
+      <h3>{{ modalTitle }}</h3>
+      <p>{{ modalMessage }}</p>
+      <button type="button" class="modal-button" [class.error]="modalType === 'error'" (click)="closeModal()">
+        Hecho
+      </button>
+    </div>
+  </div>
+</div>
