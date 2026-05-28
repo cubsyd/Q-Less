@@ -93,6 +93,7 @@
 .btn-logout,
 .btn-create,
 .btn-add,
+.btn-favorite,
 .btn-edit {
   border: none;
   border-radius: 8px;
@@ -118,6 +119,20 @@
 
 .btn-add.in-cart {
   background: #3f7d0f;
+}
+
+.btn-favorite {
+  background: #fff4f5;
+  border: 1px solid #f3b8c0;
+  color: #b8203c;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.btn-favorite.active {
+  background: #d92748;
+  border-color: #d92748;
+  color: white;
 }
 
 .btn-edit {

@@ -122,6 +122,18 @@ export class OrdersComponent implements OnInit, OnDestroy {
       .padStart(2, '0')}`;
   }
 
+  isOrderExpired(pedido: any): boolean {
+    return new Date(pedido.expires_at).getTime() <= new Date().getTime();
+  }
+
+  canMarkDelivered(pedido: any): boolean {
+    return pedido.status === 'pendiente' && !this.isOrderExpired(pedido);
+  }
+
+  canMarkNotDelivered(pedido: any): boolean {
+    return ['pendiente', 'entregado'].includes(pedido.status);
+  }
+
   getProductName(item: any): string {
     if (typeof item === 'string') {
       return item;
@@ -142,6 +154,26 @@ export class OrdersComponent implements OnInit, OnDestroy {
     return subtotal !== undefined
       ? `${name} x${quantity} - ${subtotal} Pesos`
       : `${name} x${quantity}`;
+  }
+
+  private updateLocalOrder(updatedOrder: any): void {
+    if (!updatedOrder?.id) {
+      return;
+    }
+
+    this.pedidos = this.pedidos.map((pedido) =>
+      pedido.id === updatedOrder.id ? updatedOrder : pedido
+    );
+  }
+
+  private showOrderError(error: any, fallback: string): void {
+    this.ordersMessage = error?.error?.message || fallback;
+
+    if (error?.error?.order) {
+      this.updateLocalOrder(error.error.order);
+    }
+
+    this.cdr.detectChanges();
   }
 
   iniciarVerificadorExpiraciones(): void {
@@ -175,9 +207,9 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
           ).subscribe({
 
-            next: () => {
+            next: (response: any) => {
 
-              pedido.status = 'expirado';
+              this.updateLocalOrder(response.order || { ...pedido, status: 'expirado' });
               this.cdr.detectChanges();
             }
           });
@@ -199,17 +231,19 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     ).subscribe({
 
-      next: () => {
+      next: (response: any) => {
 
-        pedido.status = 'entregado';
+        this.ordersMessage = response?.message || '';
+        this.updateLocalOrder(response.order || { ...pedido, status: 'entregado' });
         this.cdr.detectChanges();
       },
 
       error: (error) => {
 
-        console.error(
-          'Error actualizando pedido',
-          error
+        console.error('Error actualizando pedido', error);
+        this.showOrderError(
+          error,
+          'No se pudo marcar el pedido como entregado.'
         );
       }
     });
@@ -227,17 +261,19 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     ).subscribe({
 
-      next: () => {
+      next: (response: any) => {
 
-        pedido.status = 'no_entregado';
+        this.ordersMessage = response?.message || '';
+        this.updateLocalOrder(response.order || { ...pedido, status: 'no_entregado' });
         this.cdr.detectChanges();
       },
 
       error: (error) => {
 
-        console.error(
-          'Error actualizando pedido',
-          error
+        console.error('Error actualizando pedido', error);
+        this.showOrderError(
+          error,
+          'No se pudo marcar el pedido como no entregado.'
         );
       }
     });

@@ -39,6 +39,7 @@
           *ngFor="let category of categories"
           type="button"
           class="collection-item"
+          [hidden]="isAdmin && category === 'Favoritos'"
           [class.active]="selectedCategory === category"
           (click)="setCategory(category)"
         >
@@ -67,12 +68,27 @@
           <div class="product-body">
             <h3 class="product-name">{{ p.nombre }}</h3>
             <p class="product-price">{{ p.precio }} Pesos</p>
+            <p *ngIf="isAdmin && isLowStock(p)" class="product-stock-warning">
+              Hay poco stock disponible
+            </p>
             <p class="product-description">
               {{ p.descripcion || 'Producto disponible en catalogo.' }}
             </p>
             <div class="product-actions">
               <button *ngIf="!isAdmin" type="button" class="btn-add" [class.in-cart]="isInCart(p.id)" [disabled]="isAddingToCart(p.id)" (click)="addToCart(p)">
                 {{ isAddingToCart(p.id) ? 'Agregando...' : (isInCart(p.id) ? 'Agregar mas' : 'Agregar') }}
+              </button>
+              <button
+                *ngIf="!isAdmin"
+                type="button"
+                class="btn-favorite"
+                [class.active]="isFavorite(p.id)"
+                [disabled]="isUpdatingFavorite(p.id)"
+                [attr.aria-label]="isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                [title]="isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                (click)="toggleFavorite(p)"
+              >
+                {{ isFavorite(p.id) ? '♥' : '♡' }}
               </button>
               <a *ngIf="isAdmin" class="btn-edit" [routerLink]="['/editar-producto', p.id]" [state]="{ product: p }">Editar</a>
             </div>

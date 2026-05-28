@@ -85,12 +85,12 @@
 
           <div class="order-actions">
 
-            <button class="btn-success" [disabled]="pedido.status === 'expirado'" (click)="marcarEntregado(pedido)">
+            <button class="btn-success" [disabled]="!canMarkDelivered(pedido)" (click)="marcarEntregado(pedido)">
 
               Entregado
             </button>
 
-            <button class="btn-danger" [disabled]="pedido.status === 'expirado'" (click)="marcarNoEntregado(pedido)">
+            <button class="btn-danger" [disabled]="!canMarkNotDelivered(pedido)" (click)="marcarNoEntregado(pedido)">
 
               No entregado
             </button>
