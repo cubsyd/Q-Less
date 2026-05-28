@@ -95,6 +95,7 @@ class ProductoController extends Controller
         ]);
 
         $this->resolveCategoria($data);
+        $data['stock'] = max(0, (int) $data['stock']);
 
         $imagePath = $this->storeImage($request);
         if ($imagePath) {
@@ -131,6 +132,10 @@ class ProductoController extends Controller
         ]);
 
         $this->resolveCategoria($data);
+
+        if (array_key_exists('stock', $data)) {
+            $data['stock'] = max(0, (int) $data['stock']);
+        }
 
         $imagePath = $this->storeImage($request);
         if ($imagePath) {

@@ -13,22 +13,21 @@ class ChatbotRecommendationService
 {
     public function recommend(string $message): array
     {
-        $fallbackRecommendation = $this->buildInventoryRecommendation($message);
+        if (!$this->hasActionableIntent($message)) {
+            return $this->buildInstructionNeededResponse($message);
+        }
+
         $provider = (string) config('services.openai.provider', 'local');
         $apiKey = trim((string) config('services.openai.api_key'));
 
         if ($provider !== 'openai' || $apiKey === '') {
-            $fallbackRecommendation['notes'] = array_values(array_filter(
-                $fallbackRecommendation['notes'],
-                fn ($note) => !str_contains($note, 'OpenAI')
-            ));
-
-            return $fallbackRecommendation;
+            return $this->buildOpenAiUnavailableResponse($message);
         }
 
         try {
             $inventory = $this->inventorySnapshot();
             $openAiRecommendation = $this->recommendWithOpenAI($message, $inventory);
+            $openAiRecommendation = $this->enforceInventoryTruth($openAiRecommendation, $inventory);
 
             $openAiRecommendation['status'] = true;
             $openAiRecommendation['query'] = $message;
@@ -37,17 +36,44 @@ class ChatbotRecommendationService
                 ['La respuesta fue generada con OpenAI usando el inventario actual de Q-LESS.']
             )));
 
-            return $this->normalizeResponseShape($openAiRecommendation, $fallbackRecommendation);
+            return $this->normalizeResponseShape($openAiRecommendation);
         } catch (Throwable $exception) {
+            $userMessage = $this->openAiFailureMessage($exception);
+
             Log::warning('Fallo la integracion con OpenAI para el chatbot.', [
                 'message' => $message,
                 'error' => $exception->getMessage(),
             ]);
 
-            $fallbackRecommendation['notes'][] = 'Se uso la recomendacion local para mantener el chat disponible.';
-
-            return $fallbackRecommendation;
+            return [
+                'status' => false,
+                'query' => $message,
+                'project_title' => 'No pude consultar OpenAI',
+                'summary' => $userMessage,
+                'steps' => [],
+                'available_products' => [],
+                'unavailable_products' => [],
+                'alternative_products' => [],
+                'notes' => [
+                    'No se uso la recomendacion local porque el chatbot esta configurado para responder con OpenAI.',
+                ],
+            ];
         }
+    }
+
+    private function openAiFailureMessage(Throwable $exception): string
+    {
+        $message = Str::lower($exception->getMessage());
+
+        if (str_contains($message, 'incorrect api key') || str_contains($message, 'invalid api key') || str_contains($message, '401')) {
+            return 'La API key de OpenAI no es valida o fue revocada. Crea una nueva key en OpenAI, ponla en OPENAI_API_KEY y reinicia/limpia la configuracion de Laravel.';
+        }
+
+        if (str_contains($message, 'model') && (str_contains($message, 'does not exist') || str_contains($message, 'not found'))) {
+            return 'El modelo configurado en OPENAI_MODEL no esta disponible para esa API key. Cambia OPENAI_MODEL por un modelo disponible para tu cuenta.';
+        }
+
+        return 'El asistente no pudo generar una recomendacion en este momento. Revisa la API key, el modelo o la conexion del servidor.';
     }
 
     private function recommendWithOpenAI(string $message, array $inventory): array
@@ -88,7 +114,11 @@ class ChatbotRecommendationService
             ]);
 
         if ($response->failed()) {
-            throw new RuntimeException('OpenAI respondio con error HTTP ' . $response->status());
+            $errorMessage = $response->json('error.message')
+                ?? $response->json('message')
+                ?? 'OpenAI respondio con error HTTP ' . $response->status();
+
+            throw new RuntimeException($errorMessage);
         }
 
         $payload = $response->json();
@@ -114,10 +144,14 @@ class ChatbotRecommendationService
         return implode("\n", [
             'Eres el asistente de Q-LESS, una papeleria virtual escolar.',
             'Ayudas con maquetas, dibujos, carteleras y trabajos escolares.',
-            'Debes basarte unicamente en el inventario proporcionado.',
-            'Si un producto tiene stock 0, debes ubicarlo en unavailable_products y explicar que no esta disponible.',
-            'Si un material no existe en el inventario, no lo inventes.',
-            'Sugiere alternativas unicamente a partir del inventario disponible.',
+            'Razona paso a paso internamente, pero no muestres tu razonamiento oculto.',
+            'Debes basarte unicamente en el inventario proporcionado por el servidor.',
+            'No inventes productos, precios, categorias, imagenes ni stock.',
+            'Si un producto tiene stock mayor que 0, puede aparecer en available_products o alternative_products.',
+            'Si un producto tiene stock 0, solo puede aparecer en unavailable_products.',
+            'Si un material no existe en el inventario, menciona la limitacion en notes y usa alternativas reales del inventario.',
+            'Sugiere alternativas unicamente a partir del inventario disponible con stock mayor que 0.',
+            'Prioriza productos por utilidad real para el trabajo del usuario, no por orden del inventario.',
             'Responde solo con el JSON solicitado.',
             'Escribe siempre en espanol claro y amable.',
         ]);
@@ -213,205 +247,153 @@ class ChatbotRecommendationService
             ->all();
     }
 
-    private function normalizeResponseShape(array $response, array $fallback): array
+    private function normalizeResponseShape(array $response): array
     {
         foreach (['available_products', 'unavailable_products', 'alternative_products', 'steps', 'notes'] as $key) {
             if (!isset($response[$key]) || !is_array($response[$key])) {
-                $response[$key] = $fallback[$key] ?? [];
+                $response[$key] = [];
             }
         }
 
         foreach (['project_title', 'summary'] as $key) {
             if (!isset($response[$key]) || !is_string($response[$key]) || trim($response[$key]) === '') {
-                $response[$key] = $fallback[$key];
+                $response[$key] = $key === 'project_title'
+                    ? 'Recomendacion de materiales'
+                    : 'Te dejo una recomendacion basada en el inventario actual de Q-LESS.';
             }
         }
 
         return $response;
     }
 
-    private function buildInventoryRecommendation(string $message): array
+    private function enforceInventoryTruth(array $response, array $inventory): array
+    {
+        $inventoryById = collect($inventory)->keyBy('id');
+        $usedIds = [];
+
+        foreach (['available_products', 'unavailable_products', 'alternative_products'] as $listKey) {
+            $items = collect($response[$listKey] ?? [])
+                ->map(function ($item) use ($inventoryById, $listKey) {
+                    if (!is_array($item) || !isset($item['id'])) {
+                        return null;
+                    }
+
+                    $inventoryProduct = $inventoryById->get((int) $item['id']);
+
+                    if (!$inventoryProduct) {
+                        return null;
+                    }
+
+                    if ($listKey === 'unavailable_products' && (int) $inventoryProduct['stock'] > 0) {
+                        return null;
+                    }
+
+                    if ($listKey !== 'unavailable_products' && (int) $inventoryProduct['stock'] <= 0) {
+                        return null;
+                    }
+
+                    return [
+                        ...$inventoryProduct,
+                        'reason' => (string) ($item['reason'] ?? 'Recomendado segun tu solicitud.'),
+                    ];
+                })
+                ->filter()
+                ->filter(function ($item) use (&$usedIds) {
+                    if (isset($usedIds[$item['id']])) {
+                        return false;
+                    }
+
+                    $usedIds[$item['id']] = true;
+                    return true;
+                })
+                ->values()
+                ->all();
+
+            $response[$listKey] = $items;
+        }
+
+        return $response;
+    }
+
+    private function buildOpenAiUnavailableResponse(string $message): array
+    {
+        return [
+            'status' => false,
+            'query' => $message,
+            'project_title' => 'OpenAI no esta configurado',
+            'summary' => 'Configura CHATBOT_PROVIDER=openai y OPENAI_API_KEY en el archivo .env para usar el asistente de OpenAI.',
+            'steps' => [],
+            'available_products' => [],
+            'unavailable_products' => [],
+            'alternative_products' => [],
+            'notes' => [
+                'No se uso la recomendacion local porque el chatbot debe responder con OpenAI.',
+            ],
+        ];
+    }
+
+    private function hasActionableIntent(string $message): bool
     {
         $normalizedMessage = $this->normalize($message);
-        $products = Producto::with('categoriaRelacion')
-            ->orderByDesc('stock')
-            ->orderBy('nombre')
-            ->get();
 
-        $template = $this->detectTemplate($normalizedMessage);
-        $requestedKeywords = $this->buildRequestedKeywords($normalizedMessage, $template);
-
-        $available = [];
-        $unavailable = [];
-        $alternatives = [];
-        $usedProductIds = [];
-
-        foreach ($requestedKeywords as $keyword) {
-            $matchedProducts = $this->matchProducts($products, $keyword);
-
-            if ($matchedProducts['available']) {
-                $product = $matchedProducts['available'];
-                if (!isset($usedProductIds[$product->id])) {
-                    $available[] = $this->formatProduct($product, "Disponible para {$keyword}");
-                    $usedProductIds[$product->id] = true;
-                }
-
-                continue;
-            }
-
-            if ($matchedProducts['unavailable']) {
-                $product = $matchedProducts['unavailable'];
-                if (!isset($usedProductIds[$product->id])) {
-                    $unavailable[] = $this->formatProduct($product, "Relacionado con {$keyword}, pero no tiene stock");
-                    $usedProductIds[$product->id] = true;
-                }
-
-                $alternative = $this->findAlternative($products, $product, $usedProductIds);
-                if ($alternative) {
-                    $alternatives[] = $this->formatProduct($alternative, "Alternativa para {$keyword}");
-                    $usedProductIds[$alternative->id] = true;
-                }
-
-                continue;
-            }
-
-            $fallbackAlternative = $this->findKeywordAlternative($products, $keyword, $usedProductIds);
-            if ($fallbackAlternative) {
-                $alternatives[] = $this->formatProduct($fallbackAlternative, "Alternativa sugerida para {$keyword}");
-                $usedProductIds[$fallbackAlternative->id] = true;
-            }
+        if ($normalizedMessage === '') {
+            return false;
         }
 
-        if (count($available) === 0 && count($alternatives) === 0) {
-            foreach ($products->where('stock', '>', 0) as $product) {
-                if (!isset($usedProductIds[$product->id])) {
-                    $alternatives[] = $this->formatProduct($product, 'Producto disponible recomendado por el inventario');
-                    $usedProductIds[$product->id] = true;
-                }
-            }
-        }
-
-        if (count($available) > 0 || count($alternatives) > 0) {
-            foreach ($products->where('stock', '>', 0) as $product) {
-                if (isset($usedProductIds[$product->id])) {
-                    continue;
-                }
-
-                $alternatives[] = $this->formatProduct($product, 'Tambien puede servirte como material complementario segun el inventario.');
-                $usedProductIds[$product->id] = true;
-            }
-        }
-
-        $summary = $this->buildSummary($template, $available, $unavailable, $alternatives, $normalizedMessage);
-
-        return [
-            'status' => true,
-            'query' => $message,
-            'project_title' => $template['title'],
-            'summary' => $summary,
-            'steps' => $template['steps'],
-            'available_products' => $available,
-            'unavailable_products' => $unavailable,
-            'alternative_products' => $alternatives,
-            'notes' => [
-                'La recomendacion se calculo con el inventario actual de Q-LESS.',
-                'Si un material no aparece disponible, te sugiero alternativas del mismo inventario.',
-            ],
-        ];
-    }
-
-    private function detectTemplate(string $normalizedMessage): array
-    {
-        $templates = [
-            [
-                'title' => 'Maqueta del sistema solar',
-                'keywords' => ['sistema solar', 'planetas', 'astronomia', 'solar'],
-                'materials' => ['cartulina', 'marcadores', 'lapices', 'tijeras', 'pegante', 'cartulinas'],
-                'steps' => [
-                    'Dibuja o marca la orbita de los planetas sobre una base oscura.',
-                    'Recorta o modela los planetas con materiales livianos.',
-                    'Pinta y rotula cada planeta con marcadores o lapices.',
-                    'Monta la maqueta y revisa que todo quede bien fijado.',
-                ],
-            ],
-            [
-                'title' => 'Maqueta de celula',
-                'keywords' => ['celula', 'animal', 'vegetal', 'organelos'],
-                'materials' => ['cartulina', 'marcadores', 'lapices', 'tijeras', 'regla'],
-                'steps' => [
-                    'Traza la forma base de la celula y define sus partes.',
-                    'Recorta las piezas o etiquetas para los organelos.',
-                    'Usa colores distintos para diferenciar cada estructura.',
-                    'Pega y rotula cada parte de forma clara.',
-                ],
-            ],
-            [
-                'title' => 'Cartelera o exposicion escolar',
-                'keywords' => ['cartelera', 'exposicion', 'afiche', 'poster'],
-                'materials' => ['cartulinas', 'marcadores', 'lapices', 'regla', 'tijeras'],
-                'steps' => [
-                    'Organiza el contenido principal en secciones cortas.',
-                    'Marca titulos y subtitulos con buena jerarquia visual.',
-                    'Recorta apoyos graficos o cuadros informativos.',
-                    'Revisa ortografia y limpieza antes de entregar.',
-                ],
-            ],
-            [
-                'title' => 'Proyecto escolar general',
-                'keywords' => ['maqueta', 'trabajo', 'proyecto', 'manualidad'],
-                'materials' => ['cartulina', 'marcadores', 'lapices', 'tijeras', 'regla'],
-                'steps' => [
-                    'Define la idea principal del trabajo y el tamano final.',
-                    'Selecciona una base y los materiales para construirla.',
-                    'Arma primero la estructura y luego agrega detalles.',
-                    'Cierra con rotulos, color y presentacion limpia.',
-                ],
-            ],
-            [
-                'title' => 'Dibujo o ilustracion escolar',
-                'keywords' => ['dibujo', 'dibujar', 'ilustracion', 'boceto', 'colorear'],
-                'materials' => ['lapices', 'marcadores', 'hojas', 'cartulinas', 'regla', 'carton'],
-                'steps' => [
-                    'Empieza con un boceto suave para definir la idea principal.',
-                    'Usa hojas o cartulina como base segun el tamano del trabajo.',
-                    'Marca detalles y color con lapices o marcadores segun lo que este disponible.',
-                    'Revisa limpieza, bordes y presentacion final antes de entregar.',
-                ],
-            ],
+        $words = preg_split('/\s+/', $normalizedMessage, -1, PREG_SPLIT_NO_EMPTY);
+        $onlyGreetingWords = [
+            'hola',
+            'ola',
+            'buenas',
+            'buenos',
+            'dias',
+            'tardes',
+            'noches',
+            'hey',
+            'holi',
+            'saludos',
+            'gracias',
+            'ok',
+            'vale',
         ];
 
-        foreach ($templates as $template) {
-            foreach ($template['keywords'] as $keyword) {
-                if (str_contains($normalizedMessage, $this->normalize($keyword))) {
-                    return $template;
-                }
-            }
+        if ($words && count(array_diff($words, $onlyGreetingWords)) === 0) {
+            return false;
         }
 
-        return [
-            'title' => 'Recomendacion de materiales',
-            'keywords' => [],
-            'materials' => ['cartulina', 'marcadores', 'lapices', 'regla'],
-            'steps' => [
-                'Describe el trabajo y define los materiales principales.',
-                'Consulta el inventario antes de comprar o reservar.',
-                'Selecciona primero lo que ya esta disponible.',
-                'Si falta algo, usa una alternativa del catalogo.',
-            ],
-        ];
-    }
-
-    private function buildRequestedKeywords(string $normalizedMessage, array $template): array
-    {
-        $inventoryKeywords = [
-            'cuaderno',
-            'libreta',
-            'lapiz',
-            'lapices',
+        $intentKeywords = [
+            'hacer',
+            'crear',
+            'armar',
+            'elaborar',
+            'necesito',
+            'quiero',
+            'busco',
+            'recomienda',
+            'recomendar',
+            'material',
+            'materiales',
+            'maqueta',
+            'trabajo',
+            'proyecto',
+            'manualidad',
+            'cartelera',
+            'exposicion',
+            'afiche',
+            'poster',
+            'dibujo',
+            'dibujar',
+            'ilustracion',
+            'boceto',
+            'colorear',
+            'sistema solar',
+            'planetas',
+            'celula',
+            'cartulina',
             'marcador',
             'marcadores',
-            'cartulina',
-            'cartulinas',
+            'lapiz',
+            'lapices',
             'hoja',
             'hojas',
             'tijera',
@@ -422,139 +404,38 @@ class ChatbotRecommendationService
             'tempera',
             'colores',
             'carton',
-            'dibujo',
-            'dibujar',
-            'boceto',
-            'ilustracion',
+            'cuaderno',
+            'libreta',
         ];
 
-        $keywords = $template['materials'];
-
-        foreach ($inventoryKeywords as $keyword) {
+        foreach ($intentKeywords as $keyword) {
             if (str_contains($normalizedMessage, $this->normalize($keyword))) {
-                $keywords[] = $keyword;
+                return true;
             }
         }
 
-        return array_values(array_unique($keywords));
+        return false;
     }
 
-    private function matchProducts($products, string $keyword): array
-    {
-        $normalizedKeyword = $this->normalize($keyword);
-        $available = null;
-        $unavailable = null;
-
-        foreach ($products as $product) {
-            $haystack = $this->normalize(
-                trim(($product->nombre ?? '') . ' ' . ($product->descripcion ?? '') . ' ' . ($product->categoria ?? '') . ' ' . ($product->categoriaRelacion->nombre ?? ''))
-            );
-
-            if (!str_contains($haystack, $normalizedKeyword)) {
-                continue;
-            }
-
-            if ($product->stock > 0 && $available === null) {
-                $available = $product;
-            }
-
-            if ($product->stock <= 0 && $unavailable === null) {
-                $unavailable = $product;
-            }
-        }
-
-        return [
-            'available' => $available,
-            'unavailable' => $unavailable,
-        ];
-    }
-
-    private function findAlternative($products, Producto $baseProduct, array $usedProductIds): ?Producto
-    {
-        foreach ($products as $product) {
-            if (isset($usedProductIds[$product->id])) {
-                continue;
-            }
-
-            if ($product->stock <= 0) {
-                continue;
-            }
-
-            if ($baseProduct->categoria_id && $product->categoria_id === $baseProduct->categoria_id) {
-                return $product;
-            }
-        }
-
-        return null;
-    }
-
-    private function findKeywordAlternative($products, string $keyword, array $usedProductIds): ?Producto
-    {
-        $normalizedKeyword = $this->normalize($keyword);
-
-        foreach ($products as $product) {
-            if (isset($usedProductIds[$product->id]) || $product->stock <= 0) {
-                continue;
-            }
-
-            $categoryName = $this->normalize($product->categoriaRelacion->nombre ?? $product->categoria ?? '');
-            $productName = $this->normalize($product->nombre ?? '');
-
-            if (
-                str_contains($productName, $normalizedKeyword)
-                || str_contains($categoryName, $normalizedKeyword)
-                || str_contains($normalizedKeyword, $categoryName)
-            ) {
-                return $product;
-            }
-        }
-
-        return null;
-    }
-
-    private function formatProduct(Producto $product, string $reason): array
+    private function buildInstructionNeededResponse(string $message): array
     {
         return [
-            'id' => (int) $product->id,
-            'nombre' => (string) $product->nombre,
-            'descripcion' => (string) ($product->descripcion ?? ''),
-            'precio' => (float) $product->precio,
-            'stock' => (int) $product->stock,
-            'categoria' => (string) ($product->categoriaRelacion->nombre ?? $product->categoria ?? ''),
-            'image_path' => $product->image_path,
-            'reason' => $reason,
+            'status' => true,
+            'query' => $message,
+            'project_title' => 'Necesito una instruccion',
+            'summary' => 'Dime que trabajo, maqueta, cartelera, dibujo o material necesitas para poder recomendarte productos del inventario.',
+            'steps' => [
+                'Escribe que quieres hacer, por ejemplo: "Necesito una maqueta del sistema solar".',
+                'Si ya sabes los materiales, mencionalos para revisar disponibilidad.',
+                'Con esa instruccion te mostrare productos disponibles y alternativas.',
+            ],
+            'available_products' => [],
+            'unavailable_products' => [],
+            'alternative_products' => [],
+            'notes' => [
+                'Tu mensaje no incluye una solicitud clara de trabajo o materiales.',
+            ],
         ];
-    }
-
-    private function buildSummary(array $template, array $available, array $unavailable, array $alternatives, string $normalizedMessage): string
-    {
-        if (str_contains($normalizedMessage, 'dibujo') || str_contains($normalizedMessage, 'dibujar')) {
-            if (count($available) > 0) {
-                return 'Para tu dibujo, encontre materiales del inventario que te sirven para empezar ahora mismo.';
-            }
-
-            if (count($unavailable) > 0 && count($alternatives) > 0) {
-                return 'Para tu dibujo, algunos materiales no estan disponibles, pero ya te deje alternativas del inventario.';
-            }
-
-            if (count($unavailable) > 0) {
-                return 'Para tu dibujo, los materiales mas relacionados no tienen stock en este momento.';
-            }
-        }
-
-        if (count($available) > 0) {
-            return "Para {$template['title']}, encontre materiales en inventario que te sirven para empezar hoy mismo.";
-        }
-
-        if (count($unavailable) > 0 && count($alternatives) > 0) {
-            return "Para {$template['title']}, algunos materiales utiles no tienen stock, pero ya te deje alternativas disponibles.";
-        }
-
-        if (count($unavailable) > 0) {
-            return "Para {$template['title']}, en este momento los productos mas relacionados no tienen stock disponible.";
-        }
-
-        return 'Te deje una recomendacion general basada en el inventario actual de la papeleria.';
     }
 
     private function normalize(string $value): string

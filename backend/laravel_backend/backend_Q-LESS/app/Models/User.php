@@ -23,7 +23,11 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    protected $casts = [];
+
+    public function favoriteProducts()
+    {
+        return $this->belongsToMany(Producto::class, 'favorite_products', 'user_id', 'producto_id')
+            ->withTimestamps();
+    }
 }

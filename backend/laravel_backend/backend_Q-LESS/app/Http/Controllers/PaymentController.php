@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\DeliveryCodeMail;
 use App\Models\CartReservation;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PaymentController extends Controller
@@ -80,9 +78,9 @@ class PaymentController extends Controller
             'external_reference' => $externalReference,
 
             'back_urls' => [
-                'success' => 'http://localhost:4200/carrito?payment=success',
-                'failure' => 'http://localhost:4200/carrito?payment=failure',
-                'pending' => 'http://localhost:4200/carrito?payment=pending'
+                'success' => $this->frontendUrl('/carrito?payment=success'),
+                'failure' => $this->frontendUrl('/carrito?payment=failure'),
+                'pending' => $this->frontendUrl('/carrito?payment=pending')
             ],
 
             'statement_descriptor' => 'Q-LESS',
@@ -138,6 +136,9 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'payment_provider' => 'nullable|string|max:50',
+            'payment_reference' => 'nullable|string|max:255',
+            'payment_status' => 'nullable|string|max:50',
         ]);
 
         $user = User::findOrFail($data['user_id']);
@@ -161,14 +162,18 @@ class PaymentController extends Controller
             return $item->cantidad * $item->producto->precio;
         });
 
-        foreach ($cartItems as $item) {
+        $orderItems = $cartItems->map(function (CartReservation $item) {
+            $quantity = (int) $item->cantidad;
+            $unitPrice = (float) $item->producto->precio;
 
-            $producto = $item->producto;
-
-            $producto->stock -= $item->cantidad;
-
-            $producto->save();
-        }
+            return [
+                'producto_id' => (int) $item->producto->id,
+                'nombre' => (string) $item->producto->nombre,
+                'precio_unitario' => $unitPrice,
+                'cantidad' => $quantity,
+                'subtotal' => $unitPrice * $quantity,
+            ];
+        })->values()->all();
 
         $orderNumber = rand(1000, 9999);
 
@@ -180,20 +185,21 @@ class PaymentController extends Controller
 
             'total' => $total,
 
+            'items' => $orderItems,
+
             'status' => 'pendiente',
+
+            'payment_provider' => $data['payment_provider'] ?? 'mercadopago_simulado',
+
+            'payment_reference' => $data['payment_reference'] ?? null,
+
+            'payment_status' => $data['payment_status'] ?? 'simulado',
 
             'expires_at' => now()->addMinutes(10),
         ]);
 
         CartReservation::where('user_id', $user->id)
             ->delete();
-
-        Mail::to($user->email)
-            ->send(
-                new DeliveryCodeMail(
-                    $orderNumber
-                )
-            );
 
         return response()->json([
 
@@ -212,5 +218,12 @@ class PaymentController extends Controller
             'message' => 'Notificacion recibida.',
             'payload' => $request->all(),
         ]);
+    }
+
+    private function frontendUrl(string $path): string
+    {
+        $baseUrl = rtrim((string) config('services.mercadopago.frontend_url'), '/');
+
+        return $baseUrl . $path;
     }
 }
