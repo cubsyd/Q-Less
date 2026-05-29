@@ -13,6 +13,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
+        'email_verification_token',
+        'email_verification_sent_at',
         'telefono',
         'rol',
         'password',
@@ -21,9 +24,13 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'email_verification_token',
     ];
 
-    protected $casts = [];
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'email_verification_sent_at' => 'datetime',
+    ];
 
     public function favoriteProducts()
     {

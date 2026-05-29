@@ -79,36 +79,31 @@ class ChatbotRecommendationService
     private function recommendWithOpenAI(string $message, array $inventory): array
     {
         $response = Http::withToken(config('services.openai.api_key'))
-            ->timeout((int) config('services.openai.timeout', 25))
+            ->timeout((int) config('services.openai.timeout', 60))
             ->acceptJson()
-            ->post('https://api.openai.com/v1/responses', [
-                'model' => config('services.openai.model', 'gpt-5.4-mini'),
-                'input' => [
-                    [
-                        'role' => 'system',
-                        'content' => [
-                            [
-                                'type' => 'input_text',
-                                'text' => $this->buildSystemPrompt(),
-                            ],
-                        ],
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => [
-                            [
-                                'type' => 'input_text',
-                                'text' => $this->buildUserPrompt($message, $inventory),
-                            ],
-                        ],
-                    ],
-                ],
-                'text' => [
-                    'format' => [
-                        'type' => 'json_schema',
+            ->asJson()
+            ->withOptions([
+                'proxy' => '',
+            ])
+            ->post('https://api.openai.com/v1/chat/completions', [
+                'model' => config('services.openai.model', 'gpt-4o-mini'),
+                'max_tokens' => 6000,
+                'response_format' => [
+                    'type' => 'json_schema',
+                    'json_schema' => [
                         'name' => 'inventory_recommendation',
                         'strict' => true,
                         'schema' => $this->responseSchema(),
+                    ],
+                ],
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => $this->buildSystemPrompt(),
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $this->buildUserPrompt($message, $inventory),
                     ],
                 ],
             ]);
@@ -122,21 +117,55 @@ class ChatbotRecommendationService
         }
 
         $payload = $response->json();
-        $jsonText = $payload['output_text']
-            ?? $payload['output'][0]['content'][0]['text']
-            ?? null;
+        $jsonText = $payload['choices'][0]['message']['content'] ?? null;
 
         if (!is_string($jsonText) || trim($jsonText) === '') {
             throw new RuntimeException('OpenAI no devolvio texto estructurado.');
         }
 
-        $decoded = json_decode($jsonText, true);
+        $decoded = $this->decodeJsonObject($jsonText);
 
         if (!is_array($decoded)) {
             throw new RuntimeException('No fue posible interpretar la respuesta JSON de OpenAI.');
         }
 
         return $decoded;
+    }
+
+    private function decodeJsonObject(string $jsonText): mixed
+    {
+        $cleanText = trim($jsonText);
+        $cleanText = preg_replace('/^```(?:json)?\s*/i', '', $cleanText) ?? $cleanText;
+        $cleanText = preg_replace('/\s*```$/', '', $cleanText) ?? $cleanText;
+
+        $decoded = json_decode($cleanText, true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (is_string($decoded)) {
+            $decodedAgain = json_decode($decoded, true);
+
+            if (is_array($decodedAgain)) {
+                return $decodedAgain;
+            }
+        }
+
+        $start = strpos($cleanText, '{');
+        $end = strrpos($cleanText, '}');
+
+        if ($start === false || $end === false || $end <= $start) {
+            return null;
+        }
+
+        $decodedObject = json_decode(substr($cleanText, $start, $end - $start + 1), true);
+
+        if (is_string($decodedObject)) {
+            return json_decode($decodedObject, true);
+        }
+
+        return $decodedObject;
     }
 
     private function buildSystemPrompt(): string
@@ -151,6 +180,7 @@ class ChatbotRecommendationService
             'Si un producto tiene stock 0, solo puede aparecer en unavailable_products.',
             'Si un material no existe en el inventario, menciona la limitacion en notes y usa alternativas reales del inventario.',
             'Sugiere alternativas unicamente a partir del inventario disponible con stock mayor que 0.',
+            'Devuelve maximo 6 pasos, 5 productos disponibles, 3 productos no disponibles, 4 alternativas y 5 notas.',
             'Prioriza productos por utilidad real para el trabajo del usuario, no por orden del inventario.',
             'Responde solo con el JSON solicitado.',
             'Escribe siempre en espanol claro y amable.',
