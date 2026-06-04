@@ -63,6 +63,9 @@
           <div class="product-body">
             <h3 class="product-name">{{ product.nombre }}</h3>
             <p class="product-price">{{ product.precio }} Pesos</p>
+            <p *ngIf="isOutOfStock(product)" class="product-stock-empty">
+              Stock agotado
+            </p>
             <p *ngIf="isAdmin && isLowStock(product)" class="product-stock-warning">
               Hay poco stock disponible
             </p>
@@ -70,8 +73,19 @@
               {{ product.descripcion || 'Producto disponible en catalogo.' }}
             </p>
             <div class="product-actions">
-              <button *ngIf="!isAdmin" type="button" class="btn-add" [class.in-cart]="isInCart(product.id)" [disabled]="isAddingToCart(product.id)" (click)="addToCart(product)">
-                {{ isAddingToCart(product.id) ? 'Agregando...' : (isInCart(product.id) ? 'Agregar mas' : 'Agregar') }}
+              <button
+                *ngIf="!isAdmin"
+                type="button"
+                class="btn-add"
+                [class.in-cart]="isInCart(product.id)"
+                [class.out-of-stock]="isOutOfStock(product)"
+                [disabled]="isAddingToCart(product.id) || isOutOfStock(product)"
+                (click)="addToCart(product)">
+                {{
+                  isOutOfStock(product)
+                    ? 'Agotado'
+                    : (isAddingToCart(product.id) ? 'Agregando...' : (isInCart(product.id) ? 'Agregar mas' : 'Agregar'))
+                }}
               </button>
               <button
                 *ngIf="!isAdmin"

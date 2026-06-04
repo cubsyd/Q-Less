@@ -42,13 +42,13 @@
         </button>
       </div>
 
+      <div *ngIf="cartMessage" class="cart-message">
+        {{ cartMessage }}
+      </div>
+
       <div
         *ngIf="cartItems.length > 0; else emptyCart"
         class="cart-list">
-
-        <div *ngIf="cartMessage" class="cart-message">
-          {{ cartMessage }}
-        </div>
 
         <article
           class="cart-item"
@@ -100,9 +100,14 @@
                 -
               </button>
 
-              <span class="qty-value">
-                {{ item.cantidad }}
-              </span>
+              <input
+                type="number"
+                class="qty-input"
+                min="1"
+                [max]="item.cantidad + (item.stock_available ?? 0)"
+                [value]="item.cantidad"
+                (change)="updateQuantity(item, $event)"
+                [disabled]="isItemLoading(item.id)" />
 
               <button
                 type="button"

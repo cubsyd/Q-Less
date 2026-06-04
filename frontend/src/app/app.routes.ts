@@ -10,7 +10,8 @@ import { CartComponent } from './components/cart/cart.js';
 import { OrdersComponent } from './components/orders/orders.js';
 import { MyOrdersComponent } from './components/my-orders/my-orders.js';
 import { ChatConversationsComponent } from './components/chat-conversations/chat-conversations.js';
-import { AuthGuard } from './guards/auth.guard';
+import { AuthGuard } from './guards/auth.guard.js';
+import { EmailVerifiedComponent } from './components/email-verified/email-verified.js';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -24,6 +25,9 @@ export const routes: Routes = [
   { path: 'mis-pedidos', component: MyOrdersComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-conversaciones', component: ChatConversationsComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'pedidos', component: OrdersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
+
+  { path: 'email-verificado', component: EmailVerifiedComponent },
+
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/login', pathMatch: 'full' }
 ];

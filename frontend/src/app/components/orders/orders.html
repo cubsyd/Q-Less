@@ -70,7 +70,7 @@
 
             <p class="expire-text">
               Expira:
-              {{ getRemainingTime(pedido.expires_at) }}
+              {{ getRemainingTime(pedido) }}
             </p>
 
             <div class="order-items" *ngIf="pedido.items?.length > 0">
@@ -83,22 +83,31 @@
 
           </div>
 
-          <div class="order-actions">
+          <div class="order-actions" *ngIf="pedido.status === 'pendiente'">
 
-            <button class="btn-success" [disabled]="!canMarkDelivered(pedido)" (click)="marcarEntregado(pedido)">
+            <button
+              class="btn-success"
+              [disabled]="!canMarkDelivered(pedido)"
+              (click)="marcarEntregado(pedido)">
 
               Entregado
             </button>
 
-            <button class="btn-danger" [disabled]="!canMarkNotDelivered(pedido)" (click)="marcarNoEntregado(pedido)">
+            <button
+              class="btn-danger"
+              [disabled]="!canMarkNotDelivered(pedido)"
+              (click)="marcarNoEntregado(pedido)">
 
               No entregado
             </button>
 
-            <button class="btn-warning" (click)="eliminarPedido(pedido)">
+          </div>
 
-              Eliminar pedido
-            </button>
+          <div class="order-actions" *ngIf="pedido.status !== 'pendiente'">
+
+            <span class="status-finalizado">
+              Pedido finalizado
+            </span>
 
           </div>
 

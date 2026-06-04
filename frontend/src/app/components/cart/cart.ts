@@ -16,8 +16,8 @@ export class CartComponent implements OnInit, OnDestroy {
   total = 0;
   cartMessage = '';
   isRedirectingToPayment = false;
-  private countdownIntervalId: number | null = null;
   loadingItems = new Set<number>();
+  private countdownIntervalId: number | null = null;
 
   constructor(
     private authService: AuthService,
@@ -32,17 +32,12 @@ export class CartComponent implements OnInit, OnDestroy {
       const paymentStatus = params.get('payment');
 
       if (paymentStatus === 'success') {
-
-        this.cartMessage =
-          'Pago aprobado en Mercado Pago. Tu compra esta siendo confirmada.';
-
-        const userId = localStorage.getItem('user_id');
-
-        if (userId) {
-
-          this.cartMessage =
-            'Pago simulado aprobado. Si el pedido ya fue creado, puedes revisarlo en Mis pedidos.';
-        }
+        this.cartMessage = 'Pago aprobado en Mercado Pago. Tu pedido ya fue creado.';
+        this.markPaymentApproved(params.get('external_reference'));
+      } else if (paymentStatus === 'failure') {
+        this.cartMessage = 'El pago no fue aprobado por Mercado Pago.';
+      } else if (paymentStatus === 'pending') {
+        this.cartMessage = 'El pago quedo pendiente en Mercado Pago.';
       }
     });
 
@@ -54,16 +49,7 @@ export class CartComponent implements OnInit, OnDestroy {
     });
 
     this.countdownIntervalId = window.setInterval(() => {
-      this.cartItems = this.cartItems.map(item => {
-        const remaining = Math.max(0, (item.remaining_seconds || 0) - 1);
-
-        return {
-          ...item,
-          remaining_seconds: remaining,
-        };
-      });
-
-      this.cdr.detectChanges();
+      this.updateDisplayedCountdowns();
     }, 1000);
   }
 
@@ -122,6 +108,50 @@ export class CartComponent implements OnInit, OnDestroy {
     });
   }
 
+  updateQuantity(item: any, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    let nuevaCantidad = parseInt(input.value, 10);
+
+    if (isNaN(nuevaCantidad)) {
+      nuevaCantidad = item.cantidad;
+    }
+
+    if (nuevaCantidad < 1) {
+      nuevaCantidad = 1;
+    }
+
+    const maximo = item.cantidad + (item.stock_available ?? 0);
+
+    if (nuevaCantidad > maximo) {
+      nuevaCantidad = maximo;
+    }
+
+    input.value = nuevaCantidad.toString();
+
+    if (nuevaCantidad === item.cantidad) {
+      return;
+    }
+
+    this.cartMessage = 'Actualizando cantidad...';
+    this.loadingItems.add(item.id);
+
+    this.cartService.setItemQuantity(item.id, nuevaCantidad).subscribe({
+      next: () => {
+        this.total = this.cartService.getTotal();
+        this.cartMessage = 'Cantidad actualizada.';
+        this.loadingItems.delete(item.id);
+      },
+      error: (error) => {
+        console.error('Error actualizando cantidad', error);
+        this.cartMessage = error?.error?.errors?.cantidad?.[0]
+          || error?.error?.message
+          || 'No se pudo actualizar la cantidad del producto.';
+        input.value = item.cantidad.toString();
+        this.loadingItems.delete(item.id);
+      }
+    });
+  }
+
   canIncrease(item: CartItem): boolean {
     return !this.loadingItems.has(item.id) && (item.stock_available || 0) > 0;
   }
@@ -146,17 +176,6 @@ export class CartComponent implements OnInit, OnDestroy {
 
     this.cartMessage = '';
     this.isRedirectingToPayment = true;
-    const paymentWindow = window.open('', '_blank');
-
-    if (!paymentWindow) {
-      this.isRedirectingToPayment = false;
-      this.cartMessage =
-        'El navegador bloqueo la ventana de Mercado Pago. Permite ventanas emergentes para continuar.';
-      return;
-    }
-
-    paymentWindow.document.write('Redirigiendo a Mercado Pago...');
-
     this.cartService.createPaymentPreference().subscribe({
 
       next: (response: any) => {
@@ -170,7 +189,6 @@ export class CartComponent implements OnInit, OnDestroy {
           console.error('Mercado Pago no devolvio URL');
 
           this.isRedirectingToPayment = false;
-          paymentWindow.close();
 
           this.cartMessage =
             'Mercado Pago no devolvio una URL de pago valida.';
@@ -178,47 +196,19 @@ export class CartComponent implements OnInit, OnDestroy {
           return;
         }
 
-        const userId = localStorage.getItem('user_id');
+        const orderNumber = response.order_number || response.order?.order_number;
+        const emailText = response.email_sent
+          ? 'Tambien enviamos el correo a la cuenta asociada.'
+          : 'El pedido fue creado; revisa la configuracion SMTP si no llega el correo.';
 
-        if (userId) {
+        this.cartMessage = orderNumber
+          ? `Pedido creado correctamente con el numero de pedido #${orderNumber}. ${emailText}`
+          : `Pedido creado correctamente. ${emailText}`;
 
-          this.cartService.createOrder(Number(userId), {
-            payment_provider: 'mercadopago_simulado',
-            payment_reference: response.external_reference || response.preference_id || null,
-            payment_status: 'simulado',
-          })
-            .subscribe({
-
-              next: (orderResponse: any) => {
-
-                this.cartMessage =
-                  `Pedido #${orderResponse.order.order_number} creado correctamente.`;
-
-                paymentWindow.location.href = paymentUrl;
-
-                this.isRedirectingToPayment = false;
-              },
-
-              error: (error: any) => {
-
-                console.error('ERROR CREANDO PEDIDO:', error);
-
-                this.cartMessage =
-                  'No se pudo crear el pedido.';
-
-                this.isRedirectingToPayment = false;
-                paymentWindow.close();
-              }
-            });
-
-        } else {
-
-          this.cartMessage =
-            'Usuario no encontrado.';
-
-          this.isRedirectingToPayment = false;
-          paymentWindow.close();
-        }
+        window.alert(this.cartMessage);
+        this.cartService.syncCurrentUser();
+        window.location.href = paymentUrl;
+        this.isRedirectingToPayment = false;
       },
 
       error: (error) => {
@@ -233,7 +223,6 @@ export class CartComponent implements OnInit, OnDestroy {
         );
 
         this.isRedirectingToPayment = false;
-        paymentWindow.close();
 
         this.cartMessage =
           error?.error?.mercadopago_error?.message
@@ -248,9 +237,44 @@ export class CartComponent implements OnInit, OnDestroy {
     return this.authService.isAdmin();
   }
 
+  private markPaymentApproved(externalReference: string | null): void {
+    const userId = localStorage.getItem('user_id');
+
+    if (!userId || !externalReference) {
+      return;
+    }
+
+    this.cartService.createOrder(Number(userId), {
+      payment_provider: 'mercadopago',
+      payment_reference: externalReference,
+      payment_status: 'approved',
+    }).subscribe({
+      next: (orderResponse: any) => {
+        const orderNumber = orderResponse?.order?.order_number;
+
+        if (orderNumber) {
+          this.cartMessage = `Pago aprobado en Mercado Pago. Tu pedido #${orderNumber} ya fue creado.`;
+        }
+
+        this.cartService.syncCurrentUser();
+        this.router.navigate(['/carrito'], { replaceUrl: true });
+      },
+      error: (error: any) => {
+        console.error('ERROR ACTUALIZANDO PAGO:', error);
+      }
+    });
+  }
+
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.clearSession();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   getImageUrl(item: CartItem): string {
@@ -282,5 +306,34 @@ export class CartComponent implements OnInit, OnDestroy {
 
   isItemLoading(id: number): boolean {
     return this.loadingItems.has(id);
+  }
+
+  private updateDisplayedCountdowns(): void {
+    if (this.cartItems.length === 0) {
+      return;
+    }
+
+    this.cartItems = this.cartItems.map(item => {
+      const remaining = this.calculateRemainingSeconds(item);
+
+      return {
+        ...item,
+        remaining_seconds: remaining,
+      };
+    });
+
+    this.cdr.detectChanges();
+  }
+
+  private calculateRemainingSeconds(item: CartItem): number {
+    if (item.expires_at) {
+      const expiresAt = new Date(item.expires_at).getTime();
+
+      if (!Number.isNaN(expiresAt)) {
+        return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      }
+    }
+
+    return Math.max(0, (item.remaining_seconds || 0) - 1);
   }
 }

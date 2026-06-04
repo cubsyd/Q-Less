@@ -43,7 +43,7 @@ export class ChatbotComponent implements OnInit {
     private chatbotService: ChatbotService,
     private ngZone: NgZone,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     const conversationId = this.route.snapshot.queryParamMap.get('conversationId');
@@ -110,8 +110,15 @@ export class ChatbotComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.clearSession();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   private loadConversation(conversationId: string): void {

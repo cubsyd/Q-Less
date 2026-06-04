@@ -96,26 +96,22 @@ export class OrdersComponent implements OnInit, OnDestroy {
       });
   }
 
-  getRemainingTime(expiresAt: string): string {
+  getRemainingTime(pedido: any): string {
+    const remaining = this.getRemainingSeconds(pedido);
 
-    const expiration =
-      new Date(expiresAt).getTime();
-
-    const now =
-      new Date().getTime();
-
-    const difference =
-      expiration - now;
-
-    if (difference <= 0) {
+    if (remaining <= 0 && pedido?.status !== 'pendiente') {
       return 'Expirado';
     }
 
+    if (remaining <= 0) {
+      return '0:00';
+    }
+
     const minutes =
-      Math.floor(difference / 1000 / 60);
+      Math.floor(remaining / 60);
 
     const seconds =
-      Math.floor((difference / 1000) % 60);
+      remaining % 60;
 
     return `${minutes}:${seconds
       .toString()
@@ -123,11 +119,11 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   isOrderExpired(pedido: any): boolean {
-    return new Date(pedido.expires_at).getTime() <= new Date().getTime();
+    return this.getRemainingSeconds(pedido) <= 0;
   }
 
   canMarkDelivered(pedido: any): boolean {
-    return pedido.status === 'pendiente' && !this.isOrderExpired(pedido);
+    return pedido.status === 'pendiente';
   }
 
   canMarkNotDelivered(pedido: any): boolean {
@@ -184,37 +180,12 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
     this.expirationIntervalId = window.setInterval(() => {
 
-      this.pedidos.forEach((pedido) => {
+      this.pedidos = this.pedidos.map((pedido) => ({
+        ...pedido,
+        remaining_seconds: Math.max(0, this.getRemainingSeconds(pedido) - 1),
+      }));
 
-        const expiration =
-          new Date(pedido.expires_at).getTime();
-
-        const now =
-          new Date().getTime();
-
-        if (
-          expiration <= now &&
-          pedido.status === 'pendiente'
-        ) {
-
-          this.http.patch(
-
-            `${this.ordersUrl}/${pedido.id}/status`,
-
-            {
-              status: 'expirado'
-            }
-
-          ).subscribe({
-
-            next: (response: any) => {
-
-              this.updateLocalOrder(response.order || { ...pedido, status: 'expirado' });
-              this.cdr.detectChanges();
-            }
-          });
-        }
-      });
+      this.cdr.detectChanges();
 
     }, 1000);
   }
@@ -316,7 +287,44 @@ export class OrdersComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.clearSession();
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  private getRemainingSeconds(pedido: any): number {
+    const remainingSeconds = Number(pedido?.remaining_seconds);
+
+    if (Number.isFinite(remainingSeconds)) {
+      return Math.max(0, Math.floor(remainingSeconds));
+    }
+
+    const expiresAt = this.parseOrderDate(pedido?.expires_at_iso || pedido?.expires_at);
+
+    if (!expiresAt) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+  }
+
+  private parseOrderDate(value: string | null | undefined): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(value);
+    const normalized = value.includes('T') || hasTimezone
+      ? value
+      : value.replace(' ', 'T');
+    const date = new Date(normalized);
+
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 }

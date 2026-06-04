@@ -43,7 +43,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private cartService: CartService,
     private favoriteService: FavoriteService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.userName = localStorage.getItem('user_name') || 'Aprendiz';
@@ -60,6 +60,12 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
     this.route.queryParamMap.subscribe(params => {
       const category = params.get('categoria');
+      const productCreated = params.get('productCreated');
+
+      if (productCreated === 'true') {
+        this.cartMessage = 'Producto creado exitosamente.';
+      }
+
       if (category && this.categories.includes(category)) {
         this.selectedCategory = category;
       } else {
@@ -165,8 +171,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.clearSession();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   get isAdmin(): boolean {
@@ -179,8 +192,19 @@ export class ProductsComponent implements OnInit, OnDestroy {
     return Number.isFinite(stock) && stock > 0 && stock < 5;
   }
 
+  isOutOfStock(product: any): boolean {
+    const stock = Number(product?.stock);
+
+    return !Number.isFinite(stock) || stock <= 0;
+  }
+
   addToCart(product: any): void {
     if (this.isAdmin) {
+      return;
+    }
+
+    if (this.isOutOfStock(product)) {
+      this.cartMessage = 'Este producto esta agotado. No se puede agregar al carrito hasta que se actualice el stock.';
       return;
     }
 

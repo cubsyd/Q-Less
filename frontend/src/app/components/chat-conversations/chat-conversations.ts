@@ -82,9 +82,16 @@ export class ChatConversationsComponent implements OnInit {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
+  this.authService.logout().subscribe({
+    next: () => {
+      this.router.navigate(['/login']);
+    },
+    error: () => {
+      this.authService.clearSession();
+      this.router.navigate(['/login']);
+    }
+  });
+}
 
   private getSavedConversations(): SavedConversation[] {
     try {

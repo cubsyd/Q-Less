@@ -26,6 +26,9 @@ interface PaymentPreferenceResponse {
   status: boolean;
   message: string;
   external_reference: string;
+  order?: any;
+  order_number?: string;
+  email_sent?: boolean;
   preference_id: string;
   init_point: string | null;
   sandbox_init_point: string | null;
@@ -40,8 +43,14 @@ export class CartService {
   private readonly itemsSubject = new BehaviorSubject<CartItem[]>([]);
 
   readonly items$ = this.itemsSubject.asObservable();
+  private readonly countdownIntervalId: number;
+  private isRefreshingExpiredReservations = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    this.countdownIntervalId = window.setInterval(() => {
+      this.tickReservationCountdown();
+    }, 1000);
+  }
 
   getItems(): CartItem[] {
     return this.itemsSubject.value;
@@ -112,6 +121,20 @@ export class CartService {
     );
   }
 
+  setItemQuantity(id: number, quantity: number): Observable<CartResponse> {
+    const userId = this.getCurrentUserId();
+
+    if (!userId) {
+      return throwError(() => new Error('Debes iniciar sesion para usar el carrito.'));
+    }
+
+    return this.http.patch<CartResponse>(`${this.API_URL}/${userId}/${id}/quantity`, {
+      cantidad: quantity,
+    }).pipe(
+      tap((response) => this.itemsSubject.next(response.items || []))
+    );
+  }
+
   clear(): Observable<CartResponse> {
     const userId = this.getCurrentUserId();
 
@@ -156,6 +179,60 @@ export class CartService {
       user_id: userId,
       ...paymentData,
     });
+  }
+
+  private tickReservationCountdown(): void {
+    const items = this.itemsSubject.value;
+
+    if (items.length === 0) {
+      return;
+    }
+
+    let changed = false;
+    let expiredNow = false;
+
+    const nextItems = items.map((item) => {
+      const previous = Math.max(0, item.remaining_seconds || 0);
+      const remaining = this.calculateRemainingSeconds(item, previous);
+
+      if (remaining !== previous) {
+        changed = true;
+      }
+
+      if (previous > 0 && remaining === 0) {
+        expiredNow = true;
+      }
+
+      return {
+        ...item,
+        remaining_seconds: remaining,
+      };
+    });
+
+    if (changed) {
+      this.itemsSubject.next(nextItems);
+    }
+
+    if (expiredNow && !this.isRefreshingExpiredReservations) {
+      this.isRefreshingExpiredReservations = true;
+      this.syncCurrentUser();
+
+      window.setTimeout(() => {
+        this.isRefreshingExpiredReservations = false;
+      }, 1500);
+    }
+  }
+
+  private calculateRemainingSeconds(item: CartItem, fallbackSeconds: number): number {
+    if (item.expires_at) {
+      const expiresAt = new Date(item.expires_at).getTime();
+
+      if (!Number.isNaN(expiresAt)) {
+        return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      }
+    }
+
+    return Math.max(0, fallbackSeconds - 1);
   }
 
   private getCurrentUserId(): number | null {

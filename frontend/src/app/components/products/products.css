@@ -121,6 +121,13 @@
   background: #3f7d0f;
 }
 
+.btn-add.out-of-stock,
+.btn-add:disabled {
+  background: #9f9f9f;
+  color: #f8f8f8;
+  cursor: not-allowed;
+}
+
 .btn-favorite {
   background: #fff4f5;
   border: 1px solid #f3b8c0;
@@ -253,6 +260,13 @@
   color: #c62828;
   font-size: 0.88rem;
   font-weight: 700;
+}
+
+.product-stock-empty {
+  margin: -0.35rem 0 0.75rem;
+  color: #c62828;
+  font-size: 0.92rem;
+  font-weight: 800;
 }
 
 .product-description {
