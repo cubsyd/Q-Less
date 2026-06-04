@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.js';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-orders',
@@ -11,16 +12,23 @@ import { AuthService } from '../../services/auth.js';
   templateUrl: './orders.html',
   styleUrl: './orders.css'
 })
-export class OrdersComponent implements OnInit {
+export class OrdersComponent implements OnInit, OnDestroy {
 
   userName: string | null = '';
 
   pedidos: any[] = [];
+  isLoadingOrders = false;
+  ordersMessage = '';
+  deletingOrders = new Set<number>();
+  private expirationIntervalId: number | null = null;
+  private retryTimeoutId: number | null = null;
+  private readonly ordersUrl = `${environment.apiBaseUrl}/orders`;
 
   constructor(
     private authService: AuthService,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -33,23 +41,36 @@ export class OrdersComponent implements OnInit {
       return;
     }
 
-    setTimeout(() => {
-
-      this.obtenerPedidos();
-
-    }, 100);
+    this.obtenerPedidos();
+    this.iniciarVerificadorExpiraciones();
   }
 
-  obtenerPedidos(): void {
+  ngOnDestroy(): void {
+    if (this.expirationIntervalId !== null) {
+      window.clearInterval(this.expirationIntervalId);
+    }
 
-    this.http.get<any>('http://127.0.0.1:8000/api/orders')
+    if (this.retryTimeoutId !== null) {
+      window.clearTimeout(this.retryTimeoutId);
+    }
+  }
+
+  obtenerPedidos(retryCount = 0): void {
+
+    this.isLoadingOrders = true;
+    this.ordersMessage = 'Cargando pedidos...';
+
+    this.http.get<any>(this.ordersUrl)
       .subscribe({
 
         next: (response) => {
 
           this.pedidos = response.orders || [];
-
-          this.verificarExpiraciones();
+          this.isLoadingOrders = false;
+          this.ordersMessage = this.pedidos.length
+            ? ''
+            : 'No hay pedidos disponibles.';
+          this.cdr.detectChanges();
         },
 
         error: (error) => {
@@ -58,70 +79,113 @@ export class OrdersComponent implements OnInit {
             'Error obteniendo pedidos',
             error
           );
+
+          if (retryCount < 5) {
+            this.ordersMessage = 'Cargando pedidos...';
+            this.retryTimeoutId = window.setTimeout(() => {
+              this.obtenerPedidos(retryCount + 1);
+            }, 800);
+            return;
+          }
+
+          this.isLoadingOrders = false;
+          this.ordersMessage =
+            'No se pudieron cargar los pedidos. Intenta entrar nuevamente.';
+          this.cdr.detectChanges();
         }
       });
   }
 
-  getRemainingTime(expiresAt: string): string {
+  getRemainingTime(pedido: any): string {
+    const remaining = this.getRemainingSeconds(pedido);
 
-    const expiration =
-      new Date(expiresAt).getTime();
-
-    const now =
-      new Date().getTime();
-
-    const difference =
-      expiration - now;
-
-    if (difference <= 0) {
+    if (remaining <= 0 && pedido?.status !== 'pendiente') {
       return 'Expirado';
     }
 
+    if (remaining <= 0) {
+      return '0:00';
+    }
+
     const minutes =
-      Math.floor(difference / 1000 / 60);
+      Math.floor(remaining / 60);
 
     const seconds =
-      Math.floor((difference / 1000) % 60);
+      remaining % 60;
 
     return `${minutes}:${seconds
       .toString()
       .padStart(2, '0')}`;
   }
 
-  verificarExpiraciones(): void {
+  isOrderExpired(pedido: any): boolean {
+    return this.getRemainingSeconds(pedido) <= 0;
+  }
 
-    setInterval(() => {
+  canMarkDelivered(pedido: any): boolean {
+    return pedido.status === 'pendiente';
+  }
 
-      this.pedidos.forEach((pedido) => {
+  canMarkNotDelivered(pedido: any): boolean {
+    return ['pendiente', 'entregado'].includes(pedido.status);
+  }
 
-        const expiration =
-          new Date(pedido.expires_at).getTime();
+  getProductName(item: any): string {
+    if (typeof item === 'string') {
+      return item;
+    }
 
-        const now =
-          new Date().getTime();
+    return item?.nombre || 'Producto';
+  }
 
-        if (
-          expiration <= now &&
-          pedido.status === 'pendiente'
-        ) {
+  getProductLine(item: any): string {
+    if (typeof item === 'string') {
+      return item;
+    }
 
-          this.http.patch(
+    const name = item?.nombre || 'Producto';
+    const quantity = item?.cantidad || 1;
+    const subtotal = item?.subtotal;
 
-            `http://127.0.0.1:8000/api/orders/${pedido.id}/status`,
+    return subtotal !== undefined
+      ? `${name} x${quantity} - ${subtotal} Pesos`
+      : `${name} x${quantity}`;
+  }
 
-            {
-              status: 'expirado'
-            }
+  private updateLocalOrder(updatedOrder: any): void {
+    if (!updatedOrder?.id) {
+      return;
+    }
 
-          ).subscribe({
+    this.pedidos = this.pedidos.map((pedido) =>
+      pedido.id === updatedOrder.id ? updatedOrder : pedido
+    );
+  }
 
-            next: () => {
+  private showOrderError(error: any, fallback: string): void {
+    this.ordersMessage = error?.error?.message || fallback;
 
-              pedido.status = 'expirado';
-            }
-          });
-        }
-      });
+    if (error?.error?.order) {
+      this.updateLocalOrder(error.error.order);
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  iniciarVerificadorExpiraciones(): void {
+
+    if (this.expirationIntervalId !== null) {
+      return;
+    }
+
+    this.expirationIntervalId = window.setInterval(() => {
+
+      this.pedidos = this.pedidos.map((pedido) => ({
+        ...pedido,
+        remaining_seconds: Math.max(0, this.getRemainingSeconds(pedido) - 1),
+      }));
+
+      this.cdr.detectChanges();
 
     }, 1000);
   }
@@ -130,7 +194,7 @@ export class OrdersComponent implements OnInit {
 
     this.http.patch(
 
-      `http://127.0.0.1:8000/api/orders/${pedido.id}/status`,
+      `${this.ordersUrl}/${pedido.id}/status`,
 
       {
         status: 'entregado'
@@ -138,16 +202,19 @@ export class OrdersComponent implements OnInit {
 
     ).subscribe({
 
-      next: () => {
+      next: (response: any) => {
 
-        pedido.status = 'entregado';
+        this.ordersMessage = response?.message || '';
+        this.updateLocalOrder(response.order || { ...pedido, status: 'entregado' });
+        this.cdr.detectChanges();
       },
 
       error: (error) => {
 
-        console.error(
-          'Error actualizando pedido',
-          error
+        console.error('Error actualizando pedido', error);
+        this.showOrderError(
+          error,
+          'No se pudo marcar el pedido como entregado.'
         );
       }
     });
@@ -157,7 +224,7 @@ export class OrdersComponent implements OnInit {
 
     this.http.patch(
 
-      `http://127.0.0.1:8000/api/orders/${pedido.id}/status`,
+      `${this.ordersUrl}/${pedido.id}/status`,
 
       {
         status: 'no_entregado'
@@ -165,23 +232,99 @@ export class OrdersComponent implements OnInit {
 
     ).subscribe({
 
-      next: () => {
+      next: (response: any) => {
 
-        pedido.status = 'no_entregado';
+        this.ordersMessage = response?.message || '';
+        this.updateLocalOrder(response.order || { ...pedido, status: 'no_entregado' });
+        this.cdr.detectChanges();
       },
 
       error: (error) => {
 
-        console.error(
-          'Error actualizando pedido',
-          error
+        console.error('Error actualizando pedido', error);
+        this.showOrderError(
+          error,
+          'No se pudo marcar el pedido como no entregado.'
         );
       }
     });
   }
 
+  eliminarPedido(pedido: any): void {
+
+    this.deletingOrders.add(pedido.id);
+    this.pedidos =
+      this.pedidos.filter((item) => item.id !== pedido.id);
+    this.ordersMessage = this.pedidos.length
+      ? ''
+      : 'No hay pedidos disponibles.';
+    this.cdr.detectChanges();
+
+    this.http.delete(
+
+      `${this.ordersUrl}/${pedido.id}`
+
+    ).subscribe({
+
+      next: () => {
+
+        this.deletingOrders.delete(pedido.id);
+      },
+
+      error: (error) => {
+
+        console.error(
+          'Error eliminando pedido',
+          error
+        );
+
+        this.deletingOrders.delete(pedido.id);
+        this.ordersMessage =
+          'El pedido se quito de la lista, pero no se pudo eliminar en el servidor.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.clearSession();
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  private getRemainingSeconds(pedido: any): number {
+    const remainingSeconds = Number(pedido?.remaining_seconds);
+
+    if (Number.isFinite(remainingSeconds)) {
+      return Math.max(0, Math.floor(remainingSeconds));
+    }
+
+    const expiresAt = this.parseOrderDate(pedido?.expires_at_iso || pedido?.expires_at);
+
+    if (!expiresAt) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000));
+  }
+
+  private parseOrderDate(value: string | null | undefined): Date | null {
+    if (!value) {
+      return null;
+    }
+
+    const hasTimezone = /([zZ]|[+-]\d{2}:?\d{2})$/.test(value);
+    const normalized = value.includes('T') || hasTimezone
+      ? value
+      : value.replace(' ', 'T');
+    const date = new Date(normalized);
+
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 }

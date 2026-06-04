@@ -38,7 +38,7 @@ return [
     'openai' => [
         'provider' => env('CHATBOT_PROVIDER', 'local'),
         'api_key' => env('OPENAI_API_KEY'),
-        'model' => env('OPENAI_MODEL', 'gpt-5.4-mini'),
+        'model' => env('OPENAI_MODEL', 'gpt-5-mini'),
         'timeout' => env('OPENAI_TIMEOUT', 25),
     ],
 
@@ -47,6 +47,7 @@ return [
         'currency' => env('MERCADOPAGO_CURRENCY', 'COP'),
         'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
         'notification_url' => env('MERCADOPAGO_NOTIFICATION_URL'),
+        'simulated' => env('MERCADOPAGO_SIMULATED', true),
     ],
 
 ];

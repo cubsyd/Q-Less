@@ -5,9 +5,10 @@
     <nav class="sidebar-nav">
       <a routerLink="/home">Perfil</a>
       <a routerLink="/chatbot" class="active">ChatBot</a>
-      <a *ngIf="isAdmin" routerLink="/pedidos">Pedidos</a>
+      <a routerLink="/mis-conversaciones">Mis conversaciones</a>
     </nav>
 
+    <button type="button" class="new-chat-button" (click)="startNewConversation()">Nueva conversacion</button>
     <button type="button" class="logout-button" (click)="logout()">Salir del ChatBot</button>
   </aside>
 

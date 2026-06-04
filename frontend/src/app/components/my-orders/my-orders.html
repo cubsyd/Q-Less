@@ -1,0 +1,80 @@
+<div class="orders-wrapper">
+
+  <header class="main-header">
+
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a routerLink="/chatbot">ChatBot</a>
+      <a routerLink="/mis-pedidos" class="active-link">Mis pedidos</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="btn-logout" (click)="logout()">
+        Cerrar Sesion
+      </button>
+    </div>
+
+  </header>
+
+  <main class="orders-content">
+
+    <section class="orders-panel">
+
+      <div class="section-head">
+        <div>
+          <h2>Mis pedidos</h2>
+          <p>
+            Bienvenido, {{ userName }}.
+            Aqui puedes consultar los pedidos que has realizado.
+          </p>
+        </div>
+      </div>
+
+      <p class="orders-message" *ngIf="ordersMessage">
+        {{ ordersMessage }}
+      </p>
+
+      <div class="orders-list" *ngIf="!isLoadingOrders || pedidos.length > 0">
+
+        <div class="order-card" *ngFor="let pedido of pedidos">
+
+          <div class="order-info">
+
+            <h3>
+              Pedido #{{ pedido.order_number }}
+            </h3>
+
+            <p>
+              <strong>Estado:</strong>
+              {{ pedido.status }}
+            </p>
+
+            <p>
+              <strong>Total:</strong>
+              {{ pedido.total }} Pesos
+            </p>
+
+            <div class="order-items" *ngIf="pedido.items?.length > 0">
+              <strong>Productos pedidos:</strong>
+
+              <div class="order-item" *ngFor="let item of pedido.items">
+                <span>{{ getProductLine(item) }}</span>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>

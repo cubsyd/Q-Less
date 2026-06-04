@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\DeliveryCodeMail;
 use App\Models\CartReservation;
 use App\Models\Order;
 use App\Models\User;
+use App\Mail\DeliveryCodeMail;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class PaymentController extends Controller
@@ -19,9 +21,10 @@ class PaymentController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
+        $isSimulatedPayment = (bool) config('services.mercadopago.simulated', true);
         $accessToken = trim((string) config('services.mercadopago.access_token'));
 
-        if ($accessToken === '') {
+        if (!$isSimulatedPayment && $accessToken === '') {
 
             return response()->json([
                 'status' => false,
@@ -42,6 +45,13 @@ class PaymentController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'El carrito esta vacio o las reservas expiraron.',
+            ], 422);
+        }
+
+        if ($cartItems->contains(fn (CartReservation $item) => !$item->producto)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'El carrito tiene productos que ya no existen.',
             ], 422);
         }
 
@@ -68,6 +78,20 @@ class PaymentController extends Controller
             '-' .
             Str::upper(Str::random(6));
 
+        $orderResult = $this->createOrderFromCart(
+            $user,
+            $externalReference,
+            $isSimulatedPayment ? 'mercadopago_simulado' : 'mercadopago',
+            $isSimulatedPayment ? 'simulado' : 'pending'
+        );
+
+        if ($isSimulatedPayment) {
+            return response()->json(
+                $this->simulatedPreference($externalReference, 'Pago simulado configurado para Q-LESS.', $orderResult),
+                201
+            );
+        }
+
         $payload = [
 
             'items' => $items,
@@ -78,11 +102,12 @@ class PaymentController extends Controller
             ],
 
             'external_reference' => $externalReference,
+            'auto_return' => 'approved',
 
             'back_urls' => [
-                'success' => 'http://localhost:4200/carrito?payment=success',
-                'failure' => 'http://localhost:4200/carrito?payment=failure',
-                'pending' => 'http://localhost:4200/carrito?payment=pending'
+                'success' => $this->frontendUrl('/carrito?payment=success&external_reference=' . urlencode($externalReference)),
+                'failure' => $this->frontendUrl('/carrito?payment=failure&external_reference=' . urlencode($externalReference)),
+                'pending' => $this->frontendUrl('/carrito?payment=pending&external_reference=' . urlencode($externalReference))
             ],
 
             'statement_descriptor' => 'Q-LESS',
@@ -95,14 +120,28 @@ class PaymentController extends Controller
             $payload['notification_url'] = $notificationUrl;
         }
 
-        $response = Http::withToken($accessToken)
-            ->acceptJson()
-            ->asJson()
-            ->timeout(20)
-            ->post(
-                'https://api.mercadopago.com/checkout/preferences',
-                $payload
-            );
+        try {
+            $response = Http::withToken($accessToken)
+                ->acceptJson()
+                ->asJson()
+                ->timeout(20)
+                ->withOptions([
+                    'proxy' => '',
+                ])
+                ->post(
+                    'https://api.mercadopago.com/checkout/preferences',
+                    $payload
+                );
+        } catch (ConnectionException $exception) {
+            if (app()->environment('local')) {
+                return response()->json(
+                    $this->simulatedPreference($externalReference, $exception->getMessage(), $orderResult),
+                    201
+                );
+            }
+
+            throw $exception;
+        }
 
         if ($response->failed()) {
 
@@ -123,6 +162,12 @@ class PaymentController extends Controller
 
             'external_reference' => $externalReference,
 
+            'order' => $orderResult['order'],
+
+            'order_number' => $orderResult['order']->order_number,
+
+            'email_sent' => $orderResult['email_sent'],
+
             'preference_id' => $preference['id'] ?? null,
 
             'init_point' => $preference['init_point'] ?? null,
@@ -138,70 +183,32 @@ class PaymentController extends Controller
     {
         $data = $request->validate([
             'user_id' => 'required|exists:users,id',
+            'payment_provider' => 'nullable|string|in:mercadopago,mercadopago_simulado',
+            'payment_reference' => 'required_if:payment_provider,mercadopago|nullable|string|max:255',
+            'payment_status' => 'nullable|string|in:approved,pending,simulado',
         ]);
 
         $user = User::findOrFail($data['user_id']);
+        $paymentReference = $data['payment_reference'] ?? null;
 
-        $cartItems = CartReservation::with('producto')
-            ->where('user_id', $user->id)
-            ->where('status', 'active')
-            ->where('expires_at', '>', now())
-            ->get();
-
-        if ($cartItems->isEmpty()) {
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Carrito vacio.'
-            ], 422);
-        }
-
-        $total = $cartItems->sum(function ($item) {
-
-            return $item->cantidad * $item->producto->precio;
-        });
-
-        foreach ($cartItems as $item) {
-
-            $producto = $item->producto;
-
-            $producto->stock -= $item->cantidad;
-
-            $producto->save();
-        }
-
-        $orderNumber = rand(1000, 9999);
-
-        $order = Order::create([
-
-            'user_id' => $user->id,
-
-            'order_number' => $orderNumber,
-
-            'total' => $total,
-
-            'status' => 'pendiente',
-
-            'expires_at' => now()->addMinutes(10),
-        ]);
-
-        CartReservation::where('user_id', $user->id)
-            ->delete();
-
-        Mail::to($user->email)
-            ->send(
-                new DeliveryCodeMail(
-                    $orderNumber
-                )
-            );
+        $orderResult = $this->createOrderFromCart(
+            $user,
+            $paymentReference,
+            $data['payment_provider'] ?? 'mercadopago_simulado',
+            $data['payment_status'] ?? 'simulado'
+        );
 
         return response()->json([
 
             'status' => true,
 
-            'message' => 'Pedido creado correctamente.',
+            'message' => 'Pedido creado correctamente con el numero de pedido #' . $orderResult['order']->order_number . '.',
 
-            'order' => $order
+            'order' => $orderResult['order'],
+
+            'email_sent' => $orderResult['email_sent'],
+
+            'already_created' => $orderResult['already_created'],
         ]);
     }
 
@@ -212,5 +219,160 @@ class PaymentController extends Controller
             'message' => 'Notificacion recibida.',
             'payload' => $request->all(),
         ]);
+    }
+
+    private function createOrderFromCart(
+        User $user,
+        ?string $paymentReference,
+        string $paymentProvider,
+        string $paymentStatus
+    ): array {
+
+        if ($paymentReference) {
+            $existingOrder = Order::where('user_id', $user->id)
+                ->where('payment_reference', $paymentReference)
+                ->latest()
+                ->first();
+
+            if ($existingOrder) {
+                if ($existingOrder->payment_status !== $paymentStatus) {
+                    $existingOrder->update([
+                        'payment_status' => $paymentStatus,
+                    ]);
+                }
+
+                return [
+                    'order' => $existingOrder->fresh(),
+                    'email_sent' => false,
+                    'already_created' => true,
+                ];
+            }
+        }
+
+        $cartItems = CartReservation::with('producto')
+            ->where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where('expires_at', '>', now())
+            ->get();
+
+        if ($cartItems->isEmpty()) {
+            abort(response()->json([
+                'status' => false,
+                'message' => 'Carrito vacio.',
+            ], 422));
+        }
+
+        if ($cartItems->contains(fn (CartReservation $item) => !$item->producto)) {
+            abort(response()->json([
+                'status' => false,
+                'message' => 'El carrito tiene productos que ya no existen.',
+            ], 422));
+        }
+
+        $total = $cartItems->sum(function ($item) {
+
+            return $item->cantidad * $item->producto->precio;
+        });
+
+        $orderItems = $cartItems->map(function (CartReservation $item) {
+            $quantity = (int) $item->cantidad;
+            $unitPrice = (float) $item->producto->precio;
+
+            return [
+                'producto_id' => (int) $item->producto->id,
+                'nombre' => (string) $item->producto->nombre,
+                'precio_unitario' => $unitPrice,
+                'cantidad' => $quantity,
+                'subtotal' => $unitPrice * $quantity,
+            ];
+        })->values()->all();
+
+        $orderNumber = $this->generateOrderNumber();
+
+        $order = Order::create([
+
+            'user_id' => $user->id,
+
+            'order_number' => $orderNumber,
+
+            'total' => $total,
+
+            'items' => $orderItems,
+
+            'status' => 'pendiente',
+
+            'payment_provider' => $paymentProvider,
+
+            'payment_reference' => $paymentReference,
+
+            'payment_status' => $paymentStatus,
+
+            'expires_at' => now()->addMinutes(10),
+        ]);
+
+        CartReservation::where('user_id', $user->id)
+            ->delete();
+
+        $emailSent = $this->sendOrderEmail($user, $order);
+
+        return [
+            'order' => $order,
+            'email_sent' => $emailSent,
+            'already_created' => false,
+        ];
+    }
+
+    private function frontendUrl(string $path): string
+    {
+        $baseUrl = rtrim((string) config('services.mercadopago.frontend_url'), '/');
+
+        return $baseUrl . $path;
+    }
+
+    private function simulatedPreference(string $externalReference, string $reason, array $orderResult): array
+    {
+        $url = $this->frontendUrl('/carrito?payment=success&external_reference=' . urlencode($externalReference));
+
+        return [
+            'status' => true,
+            'message' => 'Preferencia simulada para entorno local.',
+            'external_reference' => $externalReference,
+            'order' => $orderResult['order'],
+            'order_number' => $orderResult['order']->order_number,
+            'email_sent' => $orderResult['email_sent'],
+            'preference_id' => 'LOCAL-' . $externalReference,
+            'init_point' => $url,
+            'sandbox_init_point' => $url,
+            'is_simulated' => true,
+            'simulation_reason' => $reason,
+            'preference' => null,
+        ];
+    }
+
+    private function generateOrderNumber(): string
+    {
+        do {
+            $orderNumber = (string) random_int(1000, 9999);
+        } while (Order::where('order_number', $orderNumber)->exists());
+
+        return $orderNumber;
+    }
+
+    private function sendOrderEmail(User $user, Order $order): bool
+    {
+        try {
+            Mail::to($user->email)->send(new DeliveryCodeMail($order));
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::warning('No se pudo enviar el correo de pedido creado.', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }

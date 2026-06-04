@@ -9,7 +9,6 @@
     <nav class="main-nav">
       <a routerLink="/home">Inicio</a>
       <a routerLink="/productos">Productos</a>
-      <a routerLink="/chatbot">ChatBot</a>
       <a routerLink="/pedidos" class="active-link">Pedidos</a>
     </nav>
 
@@ -35,7 +34,11 @@
         </div>
       </div>
 
-      <div class="orders-list">
+      <p class="orders-message" *ngIf="ordersMessage">
+        {{ ordersMessage }}
+      </p>
+
+      <div class="orders-list" *ngIf="!isLoadingOrders || pedidos.length > 0">
 
         <div class="order-card" *ngFor="let pedido of pedidos">
 
@@ -67,22 +70,44 @@
 
             <p class="expire-text">
               Expira:
-              {{ getRemainingTime(pedido.expires_at) }}
+              {{ getRemainingTime(pedido) }}
             </p>
+
+            <div class="order-items" *ngIf="pedido.items?.length > 0">
+              <strong>Productos pedidos:</strong>
+
+              <div class="order-item" *ngFor="let item of pedido.items">
+                <span>{{ getProductLine(item) }}</span>
+              </div>
+            </div>
 
           </div>
 
-          <div class="order-actions">
+          <div class="order-actions" *ngIf="pedido.status === 'pendiente'">
 
-            <button class="btn-success" [disabled]="pedido.status === 'expirado'" (click)="marcarEntregado(pedido)">
+            <button
+              class="btn-success"
+              [disabled]="!canMarkDelivered(pedido)"
+              (click)="marcarEntregado(pedido)">
 
               Entregado
             </button>
 
-            <button class="btn-danger" [disabled]="pedido.status === 'expirado'" (click)="marcarNoEntregado(pedido)">
+            <button
+              class="btn-danger"
+              [disabled]="!canMarkNotDelivered(pedido)"
+              (click)="marcarNoEntregado(pedido)">
 
               No entregado
             </button>
+
+          </div>
+
+          <div class="order-actions" *ngIf="pedido.status !== 'pendiente'">
+
+            <span class="status-finalizado">
+              Pedido finalizado
+            </span>
 
           </div>
 

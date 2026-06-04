@@ -175,7 +175,7 @@ export class CreateProduct implements OnInit {
       () => {
         this.isLoading = false;
         this.router.navigate(["/productos"], {
-          queryParams: { refresh: Date.now() }
+          queryParams: { productCreated: "true", refresh: Date.now() }
         });
       },
       (error) => {

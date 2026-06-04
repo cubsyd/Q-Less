@@ -6,6 +6,7 @@ import { filter } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.js';
 import { ProductService } from '../../services/product.service.js';
 import { CartService } from '../../services/cart.service.js';
+import { FavoriteService } from '../../services/favorite.service';
 
 @Component({
   selector: 'app-home',
@@ -17,6 +18,7 @@ import { CartService } from '../../services/cart.service.js';
 export class HomeComponent implements OnInit, OnDestroy {
   readonly categories = [
     'Todos',
+    'Favoritos',
     'Cuadernos y libretas',
     'Lapices y marcadores',
     'Cartulinas y hojas',
@@ -32,24 +34,34 @@ export class HomeComponent implements OnInit, OnDestroy {
   cartCount = 0;
   selectedCategory = 'Todos';
   cartMessage = '';
+  addingProductIds = new Set<number>();
+  favoriteProductIds = new Set<number>();
+  updatingFavoriteIds = new Set<number>();
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private productService: ProductService,
     private cartService: CartService,
+    private favoriteService: FavoriteService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.userName = localStorage.getItem('user_name') || 'Aprendiz';
 
     const userIdValue = localStorage.getItem('user_id');
     this.loggedUserId = userIdValue ? Number(userIdValue) : null;
-    this.cartService.syncCurrentUser();
-    this.cartService.items$.subscribe(() => {
-      this.cartCount = this.cartService.getCount();
-    });
+
+    if (!this.isAdmin) {
+      this.cartService.syncCurrentUser();
+      this.cartService.items$.subscribe(() => {
+        this.cartCount = this.cartService.getCount();
+        this.cdr.detectChanges();
+      });
+
+      this.loadFavorites();
+    }
 
     this.loadProducts();
 
@@ -85,6 +97,26 @@ export class HomeComponent implements OnInit, OnDestroy {
     );
   }
 
+  loadFavorites(): void {
+    const userId = this.getCurrentUserId();
+
+    if (!userId) {
+      this.favoriteProductIds.clear();
+      return;
+    }
+
+    this.favoriteService.getFavorites(userId).subscribe({
+      next: (response) => {
+        this.favoriteProductIds = new Set((response.product_ids || []).map(Number));
+        this.applyFilters();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error cargando favoritos', error);
+      }
+    });
+  }
+
   applyFilters(): void {
     const term = this.searchText.toLowerCase();
 
@@ -93,6 +125,10 @@ export class HomeComponent implements OnInit, OnDestroy {
         (p.nombre && p.nombre.toLowerCase().includes(term)) ||
         (p.descripcion && p.descripcion.toLowerCase().includes(term))
       );
+
+      if (this.selectedCategory === 'Favoritos') {
+        return matchesSearch && this.favoriteProductIds.has(Number(p.id));
+      }
 
       if (this.selectedCategory === 'Todos') {
         return matchesSearch;
@@ -117,31 +153,66 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        this.authService.clearSession();
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   get isAdmin(): boolean {
     return this.authService.isAdmin();
   }
 
+  isLowStock(product: any): boolean {
+    const stock = Number(product?.stock);
+
+    return Number.isFinite(stock) && stock > 0 && stock < 5;
+  }
+
   addToCart(product: any): void {
+    if (this.isAdmin) {
+      return;
+    }
+
+    if (this.addingProductIds.has(product.id)) {
+      return;
+    }
+
     this.cartMessage = '';
+    this.addingProductIds.add(product.id);
+    this.cdr.detectChanges();
+
     this.cartService.addItem(product).subscribe({
-      next: () => {
-        this.cartCount = this.cartService.getCount();
-        const target = this.productos.find(p => p.id === product.id);
-        if (target && typeof target.stock === 'number' && target.stock > 0) {
-          target.stock -= 1;
-        }
+      next: (response) => {
+        this.cartCount = response?.count ?? this.cartService.getCount();
+        this.productos = this.productos.map(p => {
+          if (p.id !== product.id || typeof p.stock !== 'number' || p.stock <= 0) {
+            return p;
+          }
+
+          return {
+            ...p,
+            stock: p.stock - 1,
+          };
+        });
+
+        this.addingProductIds.delete(product.id);
         this.applyFilters();
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error agregando al carrito', error);
+        this.addingProductIds.delete(product.id);
         this.cartMessage = error?.error?.errors?.producto_id?.[0]
           || error?.error?.errors?.carrito?.[0]
           || error?.error?.message
           || 'No se pudo agregar el producto al carrito.';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -150,8 +221,58 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.cartService.hasItem(productId);
   }
 
+  isAddingToCart(productId: number): boolean {
+    return this.addingProductIds.has(productId);
+  }
+
+  isFavorite(productId: number): boolean {
+    return this.favoriteProductIds.has(Number(productId));
+  }
+
+  isUpdatingFavorite(productId: number): boolean {
+    return this.updatingFavoriteIds.has(Number(productId));
+  }
+
+  toggleFavorite(product: any): void {
+    const userId = this.getCurrentUserId();
+
+    if (!userId || this.isAdmin || this.updatingFavoriteIds.has(product.id)) {
+      return;
+    }
+
+    this.updatingFavoriteIds.add(product.id);
+    this.cartMessage = '';
+    this.cdr.detectChanges();
+
+    this.favoriteService.toggleFavorite(userId, product.id).subscribe({
+      next: (response) => {
+        if (response.is_favorite) {
+          this.favoriteProductIds.add(Number(product.id));
+        } else {
+          this.favoriteProductIds.delete(Number(product.id));
+        }
+
+        this.cartMessage = response.message;
+        this.updatingFavoriteIds.delete(product.id);
+        this.applyFilters();
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('Error actualizando favorito', error);
+        this.cartMessage = error?.error?.message || 'No se pudo actualizar favoritos.';
+        this.updatingFavoriteIds.delete(product.id);
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   setCategory(category: string): void {
     this.selectedCategory = category;
     this.applyFilters();
+  }
+
+  private getCurrentUserId(): number | null {
+    const userId = localStorage.getItem('user_id');
+    return userId ? Number(userId) : null;
   }
 }

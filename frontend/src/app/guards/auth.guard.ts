@@ -24,6 +24,11 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
+    if (route.data?.['userOnly'] && this.authService.isAdmin()) {
+      this.router.navigate(['/productos']);
+      return false;
+    }
+
     return true;
   }
 }

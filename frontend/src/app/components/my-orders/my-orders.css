@@ -1,0 +1,169 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #82c91e;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #1d3323;
+}
+
+.orders-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.15);
+  border-radius: 0 0 16px 16px;
+}
+
+.brand h1 {
+  margin: 0;
+  color: #2c7a09;
+  font-size: 1.8rem;
+  letter-spacing: 2px;
+}
+
+.main-nav {
+  display: flex;
+  gap: 1.25rem;
+}
+
+.main-nav a {
+  text-decoration: none;
+  color: #457520;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.main-nav a:hover,
+.active-link {
+  color: #2c7a09;
+}
+
+.btn-logout {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-logout:hover {
+  background: #bb2d3b;
+}
+
+.orders-content {
+  padding: 1.5rem 2rem 2rem;
+  flex: 1;
+}
+
+.orders-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.section-head {
+  margin-bottom: 1.5rem;
+}
+
+.section-head h2 {
+  margin: 0;
+  color: #333;
+}
+
+.section-head p {
+  margin: 0.35rem 0 0;
+  color: #6b6b6b;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.orders-message {
+  margin: 0 0 1rem;
+  color: #4d6f20;
+  font-weight: 700;
+}
+
+.order-card {
+  background: #f8fbf2;
+  border: 1px solid #d7e5c4;
+  border-radius: 16px;
+  padding: 1.25rem;
+  transition: 0.3s;
+}
+
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.order-info h3 {
+  margin: 0 0 0.75rem;
+  color: #2c7a09;
+}
+
+.order-info p {
+  margin: 0.35rem 0;
+  color: #555;
+}
+
+.order-info strong {
+  color: #2c7a09;
+}
+
+.expire-text {
+  color: #d97706;
+  font-weight: 700;
+}
+
+.order-items {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.order-item {
+  display: flex;
+  padding: 0.55rem 0.65rem;
+  background: #eef7e4;
+  border: 1px solid #d7e5c4;
+  border-radius: 8px;
+}
+
+.order-item span {
+  color: #2c7a09;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .main-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .main-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .orders-content {
+    padding: 1rem;
+  }
+}

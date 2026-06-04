@@ -49,6 +49,7 @@
   border-color: #82c91e;
 }
 
+.new-chat-button,
 .logout-button {
   margin-top: auto;
   border: none;
@@ -58,6 +59,15 @@
   padding: 0.85rem 1rem;
   font-weight: 600;
   cursor: pointer;
+}
+
+.new-chat-button {
+  margin-top: 0;
+  background: #2c7a09;
+}
+
+.logout-button {
+  margin-top: auto;
 }
 
 .chat-panel {

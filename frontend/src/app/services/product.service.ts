@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
-  private API_URL = 'http://127.0.0.1:8000/api/productos';
+  private API_URL = `${environment.apiBaseUrl}/productos`;
+  private CATEGORIES_URL = `${environment.apiBaseUrl}/categorias`;
 
   constructor(private http: HttpClient) {}
 
@@ -15,7 +17,7 @@ export class ProductService {
   }
 
   getCategories(): Observable<any> {
-    return this.http.get<any>('http://127.0.0.1:8000/api/categorias');
+    return this.http.get<any>(this.CATEGORIES_URL);
   }
 
   getProduct(id: number | string): Observable<any> {

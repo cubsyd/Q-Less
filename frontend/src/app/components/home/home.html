@@ -6,12 +6,13 @@
     <nav class="main-nav">
       <a routerLink="/home">Inicio</a>
       <a routerLink="/productos">Productos</a>
-      <a routerLink="/chatbot">ChatBot</a>
+      <a *ngIf="!isAdmin" routerLink="/chatbot">ChatBot</a>
+      <a *ngIf="!isAdmin" routerLink="/mis-pedidos">Mis pedidos</a>
       <a *ngIf="isAdmin" routerLink="/pedidos">Pedidos</a>
     </nav>
     <div class="top-actions">
       <input type="search" placeholder="Buscar productos..." [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />
-      <a class="cart-link" routerLink="/carrito" aria-label="Ir al carrito">
+      <a *ngIf="!isAdmin" class="cart-link" routerLink="/carrito" aria-label="Ir al carrito">
         <span class="cart-icon">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M8 19a2 2 0 1 0 0 4a2 2 0 0 0 0-4Zm9 0a2 2 0 1 0 0 4a2 2 0 0 0 0-4ZM5.2 4l1 2H21l-2 7H8l-1-2H4V9h1.8L3 3H1V1h3.2l1 3Z"/>
@@ -38,6 +39,7 @@
           *ngFor="let category of categories"
           type="button"
           class="collection-item"
+          [hidden]="isAdmin && category === 'Favoritos'"
           [class.active]="selectedCategory === category"
           (click)="setCategory(category)"
         >
@@ -66,12 +68,27 @@
           <div class="product-body">
             <h3 class="product-name">{{ p.nombre }}</h3>
             <p class="product-price">{{ p.precio }} Pesos</p>
+            <p *ngIf="isAdmin && isLowStock(p)" class="product-stock-warning">
+              Hay poco stock disponible
+            </p>
             <p class="product-description">
               {{ p.descripcion || 'Producto disponible en catalogo.' }}
             </p>
             <div class="product-actions">
-              <button type="button" class="btn-add" [class.in-cart]="isInCart(p.id)" (click)="addToCart(p)">
-                {{ isInCart(p.id) ? 'Agregar mas' : 'Agregar' }}
+              <button *ngIf="!isAdmin" type="button" class="btn-add" [class.in-cart]="isInCart(p.id)" [disabled]="isAddingToCart(p.id)" (click)="addToCart(p)">
+                {{ isAddingToCart(p.id) ? 'Agregando...' : (isInCart(p.id) ? 'Agregar mas' : 'Agregar') }}
+              </button>
+              <button
+                *ngIf="!isAdmin"
+                type="button"
+                class="btn-favorite"
+                [class.active]="isFavorite(p.id)"
+                [disabled]="isUpdatingFavorite(p.id)"
+                [attr.aria-label]="isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                [title]="isFavorite(p.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+                (click)="toggleFavorite(p)"
+              >
+                {{ isFavorite(p.id) ? '♥' : '♡' }}
               </button>
               <a *ngIf="isAdmin" class="btn-edit" [routerLink]="['/editar-producto', p.id]" [state]="{ product: p }">Editar</a>
             </div>

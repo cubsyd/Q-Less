@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 
 export interface ChatbotProductSuggestion {
   id: number;
@@ -27,7 +28,7 @@ export interface ChatbotResponse {
   providedIn: 'root'
 })
 export class ChatbotService {
-  private API_URL = 'http://127.0.0.1:8000/api/chatbot/recomendar';
+  private API_URL = `${environment.apiBaseUrl}/chatbot/recomendar`;
 
   async recommend(message: string): Promise<ChatbotResponse> {
     const controller = new AbortController();

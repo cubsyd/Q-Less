@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private API_URL = 'http://127.0.0.1:8000/api';
+  private API_URL = environment.apiBaseUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -16,6 +18,10 @@ export class AuthService {
 
   login(credentials: any): Observable<any> {
     return this.http.post(`${this.API_URL}/login`, credentials);
+  }
+
+  resendVerificationEmail(email: string): Observable<any> {
+    return this.http.post(`${this.API_URL}/email/resend`, { email });
   }
 
   saveToken(token: string): void {
@@ -38,10 +44,18 @@ export class AuthService {
     return this.getUserRole() === 'admin';
   }
 
-  logout(): void {
+  clearSession(): void {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_role');
+  }
+
+  logout(): Observable<any> {
+    return this.http.post(`${this.API_URL}/logout`, {}).pipe(
+      tap(() => {
+        this.clearSession();
+      })
+    );
   }
 }

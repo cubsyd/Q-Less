@@ -154,38 +154,21 @@ export class RegisterComponent {
 
         this.isLoading = false;
 
-        if (res?.status && res?.token) {
-
-          localStorage.setItem(
-            'user_name',
-            res.user?.name || ''
-          );
-
-          localStorage.setItem(
-            'user_id',
-            String(res.user?.id || '')
-          );
-
-          localStorage.setItem(
-            'user_role',
-            res.user?.rol || ''
-          );
-
-          this.authService.saveToken(res.token);
-
+        if (res?.status) {
           this.addError(
-            'success',
-            'Registro exitoso. Redirigiendo...'
+            res?.email_sent === false ? 'warning' : 'success',
+            res?.email_sent === false
+              ? 'Cuenta creada, pero no se pudo enviar el correo de verificacion. Intenta reenviarlo desde el login.'
+              : 'Cuenta creada. Revisa tu correo y abre el enlace de verificacion antes de iniciar sesion.'
           );
 
           setTimeout(() => {
-
-            this.router.navigate(['/home']);
-
-          }, 2000);
+            this.router.navigate(['/login'], {
+              queryParams: { verification: 'sent', email: this.user.email }
+            });
+          }, 3500);
 
         } else {
-
           this.addError(
             'danger',
             'La respuesta del servidor no fue valida.'

@@ -1,0 +1,42 @@
+<div class="verified-container">
+
+  <div class="left-panel">
+
+    <div class="brand">
+      <h1>Q-LESS</h1>
+      <div class="line"></div>
+
+      <p>
+        {{ isInvalid ? 'El enlace de verificacion no es valido o ya fue usado.' : 'Tu cuenta ha sido verificada correctamente. Ya puedes acceder a todos los servicios de la papeleria virtual del SENA.' }}
+      </p>
+    </div>
+
+  </div>
+
+  <div class="right-panel">
+
+    <div class="verified-card">
+
+      <div class="success-icon" [class.invalid]="isInvalid">
+        {{ isInvalid ? '!' : 'OK' }}
+      </div>
+
+      <h2>{{ isInvalid ? 'Enlace invalido' : 'Correo verificado' }}</h2>
+
+      <p>
+        {{ isInvalid ? 'Solicita un nuevo correo de verificacion desde el login.' : 'La verificacion se realizo exitosamente.' }}
+      </p>
+
+      <p class="subtitle">
+        {{ isInvalid ? 'Si ya verificaste tu cuenta, puedes iniciar sesion.' : 'Ya puedes iniciar sesion en Q-LESS.' }}
+      </p>
+
+      <a routerLink="/login" class="btn-login">
+        Iniciar sesion
+      </a>
+
+    </div>
+
+  </div>
+
+</div>

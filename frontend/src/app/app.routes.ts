@@ -8,7 +8,10 @@ import { ProductsComponent } from './components/products/products.js';
 import { ChatbotComponent } from './components/chatbot/chatbot.js';
 import { CartComponent } from './components/cart/cart.js';
 import { OrdersComponent } from './components/orders/orders.js';
-import { AuthGuard } from './guards/auth.guard';
+import { MyOrdersComponent } from './components/my-orders/my-orders.js';
+import { ChatConversationsComponent } from './components/chat-conversations/chat-conversations.js';
+import { AuthGuard } from './guards/auth.guard.js';
+import { EmailVerifiedComponent } from './components/email-verified/email-verified.js';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -17,9 +20,14 @@ export const routes: Routes = [
   { path: 'productos', component: ProductsComponent, canActivate: [AuthGuard] },
   { path: 'nuevo-producto', component: CreateProduct, canActivate: [AuthGuard], data: { adminOnly: true } },
   { path: 'editar-producto/:id', component: EditProduct, canActivate: [AuthGuard], data: { adminOnly: true } },
-  { path: 'chatbot', component: ChatbotComponent, canActivate: [AuthGuard] },
-  { path: 'carrito', component: CartComponent, canActivate: [AuthGuard] },
+  { path: 'chatbot', component: ChatbotComponent, canActivate: [AuthGuard], data: { userOnly: true } },
+  { path: 'carrito', component: CartComponent, canActivate: [AuthGuard], data: { userOnly: true } },
+  { path: 'mis-pedidos', component: MyOrdersComponent, canActivate: [AuthGuard], data: { userOnly: true } },
+  { path: 'mis-conversaciones', component: ChatConversationsComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'pedidos', component: OrdersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
+
+  { path: 'email-verificado', component: EmailVerifiedComponent },
+
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/login', pathMatch: 'full' }
 ];

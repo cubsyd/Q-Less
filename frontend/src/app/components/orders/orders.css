@@ -96,6 +96,12 @@
   gap: 1rem;
 }
 
+.orders-message {
+  margin: 0 0 1rem;
+  color: #4d6f20;
+  font-weight: 700;
+}
+
 .order-card {
   display: flex;
   justify-content: space-between;
@@ -128,6 +134,26 @@
 
 .expire-text {
   color: #d97706;
+  font-weight: 700;
+}
+
+.order-items {
+  margin-top: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.order-item {
+  display: flex;
+  padding: 0.55rem 0.65rem;
+  background: #eef7e4;
+  border: 1px solid #d7e5c4;
+  border-radius: 8px;
+}
+
+.order-item span {
+  color: #2c7a09;
   font-weight: 700;
 }
 
@@ -166,6 +192,21 @@
   background: #c82333;
 }
 
+.btn-warning {
+  background: #ffc107;
+  color: #2b2410;
+  border: none;
+  border-radius: 8px;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
 .btn-success:disabled,
 .btn-danger:disabled {
   opacity: 0.5;
@@ -195,7 +236,8 @@
   }
 
   .btn-success,
-  .btn-danger {
+  .btn-danger,
+  .btn-warning {
     flex: 1;
   }
 }

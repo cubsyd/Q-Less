@@ -17,9 +17,22 @@ class Order extends Model
 
         'total',
 
+        'items',
+
         'status',
 
+        'payment_provider',
+
+        'payment_reference',
+
+        'payment_status',
+
         'expires_at',
+    ];
+
+    protected $casts = [
+        'items' => 'array',
+        'expires_at' => 'datetime',
     ];
 
     public function user()
