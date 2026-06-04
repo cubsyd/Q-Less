@@ -148,7 +148,15 @@ export class RegisterComponent {
 
     this.clearErrors();
 
-    this.authService.register(this.user).subscribe({
+    const payload = {
+      name: this.user.name.trim(),
+      email: this.user.email.trim().toLowerCase(),
+      telefono: this.user.telefono.trim(),
+      password: this.user.password,
+      password_confirmation: this.user.password_confirmation
+    };
+
+    this.authService.register(payload).subscribe({
 
       next: (res: any) => {
 
@@ -157,14 +165,16 @@ export class RegisterComponent {
         if (res?.status) {
           this.addError(
             res?.email_sent === false ? 'warning' : 'success',
-            res?.email_sent === false
-              ? 'Cuenta creada, pero no se pudo enviar el correo de verificacion. Intenta reenviarlo desde el login.'
-              : 'Cuenta creada. Revisa tu correo y abre el enlace de verificacion antes de iniciar sesion.'
+            res?.message || (
+              res?.email_sent === false
+                ? 'Cuenta creada, pero no se pudo enviar el correo de verificacion. Intenta reenviarlo desde el login.'
+                : 'Cuenta creada. Revisa tu correo y abre el enlace de verificacion antes de iniciar sesion.'
+            )
           );
 
           setTimeout(() => {
             this.router.navigate(['/login'], {
-              queryParams: { verification: 'sent', email: this.user.email }
+              queryParams: { verification: 'sent', email: payload.email }
             });
           }, 3500);
 
@@ -181,13 +191,21 @@ export class RegisterComponent {
         this.isLoading = false;
 
         const serverErrors = err?.error?.errors;
+        const messages = serverErrors
+          ? Object.values(serverErrors).flat().filter(Boolean)
+          : [];
+
+        if (messages.length > 0) {
+          messages.forEach((message) => {
+            this.addError('danger', String(message));
+          });
+
+          return;
+        }
 
         this.addError(
           'danger',
-          serverErrors?.email?.[0]
-          || serverErrors?.telefono?.[0]
-          || serverErrors?.password?.[0]
-          || 'Error de conexion con el servidor.'
+          err?.error?.message || 'Error de conexion con el servidor.'
         );
       }
     });

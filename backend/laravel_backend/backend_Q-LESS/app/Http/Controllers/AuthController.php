@@ -19,7 +19,7 @@ class AuthController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => 'required|string|email|max:255',
             'telefono' => 'required|string|min:7|max:30|regex:/^[0-9+\s()-]+$/',
             'password' => [
                 'required',
@@ -34,6 +34,42 @@ class AuthController extends Controller
             'password.confirmed' => 'Las contrasenas no coinciden.',
             'telefono.regex' => 'El telefono solo puede contener numeros, espacios, parentesis, + o -.',
         ]);
+
+        $existingUser = User::where('email', $request->email)->first();
+
+        if ($existingUser) {
+            if ($existingUser->email_verified_at) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Este correo ya esta registrado. Inicia sesion con tu cuenta.',
+                    'errors' => [
+                        'email' => ['Este correo ya esta registrado.'],
+                    ],
+                ], 422);
+            }
+
+            if (!$existingUser->email_verification_token) {
+                $existingUser->email_verification_token = Str::random(64);
+            }
+
+            $existingUser->name = $request->name;
+            $existingUser->telefono = $request->telefono;
+            $existingUser->password = Hash::make($request->password);
+            $existingUser->email_verification_sent_at = now();
+            $existingUser->save();
+
+            $emailSent = $this->sendVerificationEmail($existingUser);
+
+            return response()->json([
+                'status' => true,
+                'message' => $emailSent
+                    ? 'La cuenta ya existia sin verificar. Te enviamos un nuevo correo de verificacion.'
+                    : 'La cuenta ya existia sin verificar, pero no se pudo enviar el correo de verificacion.',
+                'user' => $existingUser,
+                'email_verification_required' => true,
+                'email_sent' => $emailSent,
+            ]);
+        }
 
         $isAdmin = $request->email === $this->adminEmail;
 
