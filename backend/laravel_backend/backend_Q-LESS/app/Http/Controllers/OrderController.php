@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use App\Models\Producto;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    private const ORDER_EXPIRATION_MINUTES = 10;
+
     public function index()
     {
         $orders = Order::with('user')
@@ -17,7 +20,7 @@ class OrderController extends Controller
 
         return response()->json([
             'status' => true,
-            'orders' => $orders
+            'orders' => $this->formatOrders($orders)
         ]);
     }
 
@@ -30,7 +33,7 @@ class OrderController extends Controller
 
         return response()->json([
             'status' => true,
-            'orders' => $orders
+            'orders' => $this->formatOrders($orders)
         ]);
     }
 
@@ -45,16 +48,7 @@ class OrderController extends Controller
 
         $result = DB::transaction(function () use ($order, $newStatus) {
             $lockedOrder = Order::lockForUpdate()->findOrFail($order->id);
-
             $realPreviousStatus = $lockedOrder->status;
-
-            if ($realPreviousStatus !== 'pendiente') {
-                return [
-                    'status' => false,
-                    'code' => 422,
-                    'message' => 'Este pedido ya fue finalizado y no puede cambiar de estado.',
-                ];
-            }
 
             if ($this->isLateDeliveryAttempt($lockedOrder, $realPreviousStatus, $newStatus)) {
                 if ($realPreviousStatus === 'pendiente') {
@@ -89,20 +83,77 @@ class OrderController extends Controller
         });
 
         $order = Order::with('user')->findOrFail($id);
+        $formattedOrder = $this->formatOrder($order);
 
         if (!$result['status']) {
             return response()->json([
                 'status' => false,
                 'message' => $result['message'],
-                'order' => $order,
+                'order' => $formattedOrder,
             ], $result['code']);
         }
 
         return response()->json([
             'status' => true,
             'message' => $result['message'],
-            'order' => $order
+            'order' => $formattedOrder
         ]);
+    }
+
+    private function formatOrders($orders): array
+    {
+        return $orders
+            ->map(fn (Order $order) => $this->formatOrder($order))
+            ->values()
+            ->all();
+    }
+
+    private function formatOrder(Order $order): array
+    {
+        $data = $order->toArray();
+        $effectiveExpiresAt = $this->effectiveExpiresAt($order);
+        $remainingSeconds = $effectiveExpiresAt
+            ? max(0, $effectiveExpiresAt->getTimestamp() - now()->getTimestamp())
+            : 0;
+
+        $data['expires_at_iso'] = $effectiveExpiresAt?->toIso8601String();
+        $data['remaining_seconds'] = $remainingSeconds;
+
+        return $data;
+    }
+
+    private function effectiveExpiresAt(Order $order): ?Carbon
+    {
+        $referenceExpiresAt = $this->expiresAtFromPaymentReference($order);
+
+        if ($referenceExpiresAt) {
+            return $referenceExpiresAt;
+        }
+
+        if ($order->created_at) {
+            return $order->created_at->copy()->addMinutes(self::ORDER_EXPIRATION_MINUTES);
+        }
+
+        return $order->expires_at;
+    }
+
+    private function expiresAtFromPaymentReference(Order $order): ?Carbon
+    {
+        $reference = (string) ($order->payment_reference ?? '');
+
+        if (!preg_match('/^QLESS-\d+-(\d{14})-[A-Z0-9]+$/', $reference, $matches)) {
+            return null;
+        }
+
+        $createdAt = Carbon::createFromFormat(
+            'YmdHis',
+            $matches[1],
+            config('app.timezone')
+        );
+
+        return $createdAt
+            ? $createdAt->addMinutes(self::ORDER_EXPIRATION_MINUTES)
+            : null;
     }
 
     private function isLateDeliveryAttempt(Order $order, string $previousStatus, string $newStatus): bool
@@ -111,7 +162,9 @@ class OrderController extends Controller
             return false;
         }
 
-        return $order->expires_at && $order->expires_at->isPast();
+        $effectiveExpiresAt = $this->effectiveExpiresAt($order);
+
+        return $effectiveExpiresAt && $effectiveExpiresAt->isPast();
     }
 
     private function statusMessage(string $previousStatus, string $newStatus): string
@@ -133,6 +186,18 @@ class OrderController extends Controller
         }
 
         return 'Estado actualizado.';
+    }
+
+    private function shouldReturnStock(string $previousStatus, string $newStatus): bool
+    {
+        return in_array($previousStatus, ['pendiente', 'entregado'], true)
+            && in_array($newStatus, ['no_entregado', 'expirado'], true);
+    }
+
+    private function shouldDiscountStock(string $previousStatus, string $newStatus): bool
+    {
+        return in_array($previousStatus, ['no_entregado', 'expirado'], true)
+            && in_array($newStatus, ['pendiente', 'entregado'], true);
     }
 
     private function returnOrderStock(Order $order): void
@@ -218,17 +283,6 @@ class OrderController extends Controller
         }
 
         return null;
-    }
-
-    private function shouldReturnStock(string $previousStatus, string $newStatus): bool
-    {
-        return $previousStatus === 'pendiente'
-            && in_array($newStatus, ['no_entregado', 'expirado'], true);
-    }
-
-    private function shouldDiscountStock(string $previousStatus, string $newStatus): bool
-    {
-        return false;
     }
 
     public function destroy($id)

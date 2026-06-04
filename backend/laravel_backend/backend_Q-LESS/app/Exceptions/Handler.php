@@ -7,6 +7,14 @@ use Throwable;
 
 class Handler extends ExceptionHandler
 {
+    protected $levels = [
+        //
+    ];
+
+    protected $dontReport = [
+        //
+    ];
+
     protected $dontFlash = [
         'current_password',
         'password',
@@ -15,6 +23,8 @@ class Handler extends ExceptionHandler
 
     public function register(): void
     {
-        //
+        $this->reportable(function (Throwable $e) {
+            //
+        });
     }
 }

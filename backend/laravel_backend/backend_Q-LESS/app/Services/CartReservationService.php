@@ -168,6 +168,58 @@ class CartReservationService
         return $this->getCartByUserId($userId);
     }
 
+    public function setProductQuantity(int $userId, int $productId, int $quantity): array
+    {
+        if (!$this->reservationsTableExists()) {
+            return $this->buildCartResponse([]);
+        }
+
+        if ($quantity < 1) {
+            throw ValidationException::withMessages([
+                'cantidad' => 'La cantidad debe ser al menos 1.',
+            ]);
+        }
+
+        $this->cleanupExpiredReservations();
+
+        DB::transaction(function () use ($userId, $productId, $quantity) {
+            $reservation = CartReservation::lockForUpdate()
+                ->where('user_id', $userId)
+                ->where('producto_id', $productId)
+                ->where('status', self::STATUS_ACTIVE)
+                ->first();
+
+            if (!$reservation) {
+                return;
+            }
+
+            $product = Producto::lockForUpdate()->findOrFail($reservation->producto_id);
+            $currentQuantity = (int) $reservation->cantidad;
+            $difference = $quantity - $currentQuantity;
+
+            if ($difference > 0) {
+                if ($product->stock < $difference) {
+                    throw ValidationException::withMessages([
+                        'cantidad' => 'No hay suficientes unidades disponibles para esa cantidad.',
+                    ]);
+                }
+
+                $product->decrement('stock', $difference);
+            } elseif ($difference < 0) {
+                $product->increment('stock', abs($difference));
+            } else {
+                return;
+            }
+
+            $reservation->update([
+                'cantidad' => $quantity,
+                'expires_at' => $reservation->expires_at,
+            ]);
+        });
+
+        return $this->getCartByUserId($userId);
+    }
+
     public function removeProduct(int $userId, int $productId): array
     {
         if (!$this->reservationsTableExists()) {

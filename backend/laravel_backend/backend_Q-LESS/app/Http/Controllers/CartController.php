@@ -44,6 +44,21 @@ class CartController extends Controller
         );
     }
 
+    public function setQuantity(Request $request, int $userId, int $productId)
+    {
+        $data = $request->validate([
+            'cantidad' => 'required|integer|min:1',
+        ]);
+
+        return response()->json(
+            $this->cartReservationService->setProductQuantity(
+                $userId,
+                $productId,
+                (int) $data['cantidad']
+            )
+        );
+    }
+
     public function clear(int $userId)
     {
         return response()->json(

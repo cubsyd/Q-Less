@@ -40,14 +40,12 @@ class ProductoController extends Controller
         }
 
         $directory = public_path('storage/productos');
-
         if (!File::exists($directory)) {
             File::makeDirectory($directory, 0755, true);
         }
 
         $file = $request->file('image');
         $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
-
         $file->move($directory, $filename);
 
         return url('storage/productos/' . $filename);
@@ -97,11 +95,9 @@ class ProductoController extends Controller
         ]);
 
         $this->resolveCategoria($data);
-
         $data['stock'] = max(0, (int) $data['stock']);
 
         $imagePath = $this->storeImage($request);
-
         if ($imagePath) {
             $data['image_path'] = $imagePath;
         }
@@ -142,7 +138,6 @@ class ProductoController extends Controller
         }
 
         $imagePath = $this->storeImage($request);
-
         if ($imagePath) {
             $this->deleteImageIfExists($producto->image_path);
             $data['image_path'] = $imagePath;
@@ -161,8 +156,6 @@ class ProductoController extends Controller
 
         $producto->delete();
 
-        return response()->json([
-            'message' => 'Producto eliminado'
-        ]);
+        return response()->json(['message' => 'Producto eliminado']);
     }
 }

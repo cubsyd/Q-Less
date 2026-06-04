@@ -7,13 +7,15 @@
 
     <h2>Q-LESS</h2>
 
-    <p>Tu codigo de entrega es:</p>
+    <p>Tu pedido fue creado correctamente.</p>
 
-    <h1>{{ $deliveryCode }}</h1>
+    <h1>Pedido #{{ $orderNumber }}</h1>
 
     <p>
-        Presenta este codigo para reclamar tu producto.
+        Recibimos tu compra y la estamos preparando. Presenta este numero para reclamar tu producto.
     </p>
+
+    <p>Total: {{ number_format((float) $order->total, 0, ',', '.') }} Pesos</p>
 
 </body>
 </html>

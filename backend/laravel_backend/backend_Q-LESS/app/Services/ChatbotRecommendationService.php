@@ -13,25 +13,21 @@ class ChatbotRecommendationService
 {
     public function recommend(string $message): array
     {
-
         if (!$this->hasActionableIntent($message)) {
             return $this->buildInstructionNeededResponse($message);
         }
-
-
 
         $provider = (string) config('services.openai.provider', 'local');
         $apiKey = trim((string) config('services.openai.api_key'));
 
         if ($provider !== 'openai' || $apiKey === '') {
-
             return $this->buildOpenAiUnavailableResponse($message);
-
         }
 
         try {
             $inventory = $this->inventorySnapshot();
             $openAiRecommendation = $this->recommendWithOpenAI($message, $inventory);
+            $openAiRecommendation = $this->enforceInventoryTruth($openAiRecommendation, $inventory);
 
             $openAiRecommendation['status'] = true;
             $openAiRecommendation['query'] = $message;
@@ -39,7 +35,6 @@ class ChatbotRecommendationService
                 $openAiRecommendation['notes'] ?? [],
                 ['La respuesta fue generada con OpenAI usando el inventario actual de Q-LESS.']
             )));
-
 
             return $this->normalizeResponseShape($openAiRecommendation);
         } catch (Throwable $exception) {
@@ -49,7 +44,6 @@ class ChatbotRecommendationService
                 'message' => $message,
                 'error' => $exception->getMessage(),
             ]);
-
 
             return [
                 'status' => false,
@@ -82,64 +76,54 @@ class ChatbotRecommendationService
         return 'El asistente no pudo generar una recomendacion en este momento. Revisa la API key, el modelo o la conexion del servidor.';
     }
 
-
     private function recommendWithOpenAI(string $message, array $inventory): array
     {
         $response = Http::withToken(config('services.openai.api_key'))
-            ->timeout((int) config('services.openai.timeout', 25))
+            ->timeout((int) config('services.openai.timeout', 60))
             ->acceptJson()
-            ->post('https://api.openai.com/v1/responses', [
-                'model' => config('services.openai.model', 'gpt-5.4-mini'),
-                'input' => [
-                    [
-                        'role' => 'system',
-                        'content' => [
-                            [
-                                'type' => 'input_text',
-                                'text' => $this->buildSystemPrompt(),
-                            ],
-                        ],
-                    ],
-                    [
-                        'role' => 'user',
-                        'content' => [
-                            [
-                                'type' => 'input_text',
-                                'text' => $this->buildUserPrompt($message, $inventory),
-                            ],
-                        ],
-                    ],
-                ],
-                'text' => [
-                    'format' => [
-                        'type' => 'json_schema',
+            ->asJson()
+            ->withOptions([
+                'proxy' => '',
+            ])
+            ->post('https://api.openai.com/v1/chat/completions', [
+                'model' => config('services.openai.model', 'gpt-4o-mini'),
+                'max_tokens' => 6000,
+                'response_format' => [
+                    'type' => 'json_schema',
+                    'json_schema' => [
                         'name' => 'inventory_recommendation',
                         'strict' => true,
                         'schema' => $this->responseSchema(),
                     ],
                 ],
+                'messages' => [
+                    [
+                        'role' => 'system',
+                        'content' => $this->buildSystemPrompt(),
+                    ],
+                    [
+                        'role' => 'user',
+                        'content' => $this->buildUserPrompt($message, $inventory),
+                    ],
+                ],
             ]);
 
         if ($response->failed()) {
-
             $errorMessage = $response->json('error.message')
                 ?? $response->json('message')
                 ?? 'OpenAI respondio con error HTTP ' . $response->status();
 
             throw new RuntimeException($errorMessage);
-
         }
 
         $payload = $response->json();
-        $jsonText = $payload['output_text']
-            ?? $payload['output'][0]['content'][0]['text']
-            ?? null;
+        $jsonText = $payload['choices'][0]['message']['content'] ?? null;
 
         if (!is_string($jsonText) || trim($jsonText) === '') {
             throw new RuntimeException('OpenAI no devolvio texto estructurado.');
         }
 
-        $decoded = json_decode($jsonText, true);
+        $decoded = $this->decodeJsonObject($jsonText);
 
         if (!is_array($decoded)) {
             throw new RuntimeException('No fue posible interpretar la respuesta JSON de OpenAI.');
@@ -148,12 +132,47 @@ class ChatbotRecommendationService
         return $decoded;
     }
 
+    private function decodeJsonObject(string $jsonText): mixed
+    {
+        $cleanText = trim($jsonText);
+        $cleanText = preg_replace('/^```(?:json)?\s*/i', '', $cleanText) ?? $cleanText;
+        $cleanText = preg_replace('/\s*```$/', '', $cleanText) ?? $cleanText;
+
+        $decoded = json_decode($cleanText, true);
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (is_string($decoded)) {
+            $decodedAgain = json_decode($decoded, true);
+
+            if (is_array($decodedAgain)) {
+                return $decodedAgain;
+            }
+        }
+
+        $start = strpos($cleanText, '{');
+        $end = strrpos($cleanText, '}');
+
+        if ($start === false || $end === false || $end <= $start) {
+            return null;
+        }
+
+        $decodedObject = json_decode(substr($cleanText, $start, $end - $start + 1), true);
+
+        if (is_string($decodedObject)) {
+            return json_decode($decodedObject, true);
+        }
+
+        return $decodedObject;
+    }
+
     private function buildSystemPrompt(): string
     {
         return implode("\n", [
             'Eres el asistente de Q-LESS, una papeleria virtual escolar.',
             'Ayudas con maquetas, dibujos, carteleras y trabajos escolares.',
-
             'Razona paso a paso internamente, pero no muestres tu razonamiento oculto.',
             'Debes basarte unicamente en el inventario proporcionado por el servidor.',
             'No inventes productos, precios, categorias, imagenes ni stock.',
@@ -161,8 +180,8 @@ class ChatbotRecommendationService
             'Si un producto tiene stock 0, solo puede aparecer en unavailable_products.',
             'Si un material no existe en el inventario, menciona la limitacion en notes y usa alternativas reales del inventario.',
             'Sugiere alternativas unicamente a partir del inventario disponible con stock mayor que 0.',
+            'Devuelve maximo 6 pasos, 5 productos disponibles, 3 productos no disponibles, 4 alternativas y 5 notas.',
             'Prioriza productos por utilidad real para el trabajo del usuario, no por orden del inventario.',
-
             'Responde solo con el JSON solicitado.',
             'Escribe siempre en espanol claro y amable.',
         ]);
@@ -258,7 +277,6 @@ class ChatbotRecommendationService
             ->all();
     }
 
-
     private function normalizeResponseShape(array $response): array
     {
         foreach (['available_products', 'unavailable_products', 'alternative_products', 'steps', 'notes'] as $key) {
@@ -269,17 +287,14 @@ class ChatbotRecommendationService
 
         foreach (['project_title', 'summary'] as $key) {
             if (!isset($response[$key]) || !is_string($response[$key]) || trim($response[$key]) === '') {
-
                 $response[$key] = $key === 'project_title'
                     ? 'Recomendacion de materiales'
                     : 'Te dejo una recomendacion basada en el inventario actual de Q-LESS.';
-
             }
         }
 
         return $response;
     }
-
 
     private function enforceInventoryTruth(array $response, array $inventory): array
     {
@@ -409,10 +424,18 @@ class ChatbotRecommendationService
             'marcadores',
             'lapiz',
             'lapices',
-            'dibujo',
-            'dibujar',
-            'boceto',
-            'ilustracion',
+            'hoja',
+            'hojas',
+            'tijera',
+            'tijeras',
+            'regla',
+            'pegante',
+            'borrador',
+            'tempera',
+            'colores',
+            'carton',
+            'cuaderno',
+            'libreta',
         ];
 
         foreach ($intentKeywords as $keyword) {
@@ -442,93 +465,6 @@ class ChatbotRecommendationService
             'notes' => [
                 'Tu mensaje no incluye una solicitud clara de trabajo o materiales.',
             ],
-        ];
-    }
-
-    private function matchProducts($products, string $keyword): array
-    {
-        $normalizedKeyword = $this->normalize($keyword);
-        $available = null;
-        $unavailable = null;
-
-        foreach ($products as $product) {
-            $haystack = $this->normalize(
-                trim(($product->nombre ?? '') . ' ' . ($product->descripcion ?? '') . ' ' . ($product->categoria ?? '') . ' ' . ($product->categoriaRelacion->nombre ?? ''))
-            );
-
-            if (!str_contains($haystack, $normalizedKeyword)) {
-                continue;
-            }
-
-            if ($product->stock > 0 && $available === null) {
-                $available = $product;
-            }
-
-            if ($product->stock <= 0 && $unavailable === null) {
-                $unavailable = $product;
-            }
-        }
-
-        return [
-            'available' => $available,
-            'unavailable' => $unavailable,
-        ];
-    }
-
-    private function findAlternative($products, Producto $baseProduct, array $usedProductIds): ?Producto
-    {
-        foreach ($products as $product) {
-            if (isset($usedProductIds[$product->id])) {
-                continue;
-            }
-
-            if ($product->stock <= 0) {
-                continue;
-            }
-
-            if ($baseProduct->categoria_id && $product->categoria_id === $baseProduct->categoria_id) {
-                return $product;
-            }
-        }
-
-        return null;
-    }
-
-    private function findKeywordAlternative($products, string $keyword, array $usedProductIds): ?Producto
-    {
-        $normalizedKeyword = $this->normalize($keyword);
-
-        foreach ($products as $product) {
-            if (isset($usedProductIds[$product->id]) || $product->stock <= 0) {
-                continue;
-            }
-
-            $categoryName = $this->normalize($product->categoriaRelacion->nombre ?? $product->categoria ?? '');
-            $productName = $this->normalize($product->nombre ?? '');
-
-            if (
-                str_contains($productName, $normalizedKeyword)
-                || str_contains($categoryName, $normalizedKeyword)
-                || str_contains($normalizedKeyword, $categoryName)
-            ) {
-                return $product;
-            }
-        }
-
-        return null;
-    }
-
-    private function formatProduct(Producto $product, string $reason): array
-    {
-        return [
-            'id' => (int) $product->id,
-            'nombre' => (string) $product->nombre,
-            'descripcion' => (string) ($product->descripcion ?? ''),
-            'precio' => (float) $product->precio,
-            'stock' => (int) $product->stock,
-            'categoria' => (string) ($product->categoriaRelacion->nombre ?? $product->categoria ?? ''),
-            'image_path' => $product->image_path,
-            'reason' => $reason,
         ];
     }
 

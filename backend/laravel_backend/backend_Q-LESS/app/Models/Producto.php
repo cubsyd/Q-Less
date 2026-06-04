@@ -36,11 +36,7 @@ class Producto extends Model
 
     public function favoredByUsers()
     {
-        return $this->belongsToMany(
-            User::class,
-            'favorite_products',
-            'producto_id',
-            'user_id'
-        )->withTimestamps();
+        return $this->belongsToMany(User::class, 'favorite_products', 'producto_id', 'user_id')
+            ->withTimestamps();
     }
 }
