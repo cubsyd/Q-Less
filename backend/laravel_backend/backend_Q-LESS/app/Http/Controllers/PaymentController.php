@@ -102,7 +102,6 @@ class PaymentController extends Controller
             ],
 
             'external_reference' => $externalReference,
-            'auto_return' => 'approved',
 
             'back_urls' => [
                 'success' => $this->frontendUrl('/carrito?payment=success&external_reference=' . urlencode($externalReference)),
@@ -112,6 +111,10 @@ class PaymentController extends Controller
 
             'statement_descriptor' => 'Q-LESS',
         ];
+
+        if (!$this->isLocalFrontendUrl()) {
+            $payload['auto_return'] = 'approved';
+        }
 
         $notificationUrl =
             trim((string) config('services.mercadopago.notification_url'));
@@ -327,6 +330,13 @@ class PaymentController extends Controller
         $baseUrl = rtrim((string) config('services.mercadopago.frontend_url'), '/');
 
         return $baseUrl . $path;
+    }
+
+    private function isLocalFrontendUrl(): bool
+    {
+        $host = parse_url((string) config('services.mercadopago.frontend_url'), PHP_URL_HOST);
+
+        return in_array($host, ['localhost', '127.0.0.1'], true);
     }
 
     private function simulatedPreference(string $externalReference, string $reason, array $orderResult): array

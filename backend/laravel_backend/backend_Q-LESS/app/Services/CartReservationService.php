@@ -326,6 +326,7 @@ class CartReservationService
             'nombre' => (string) $product->nombre,
             'precio' => (float) $product->precio,
             'image_path' => $product->image_path,
+            'product_images' => $product->product_images ?: ($product->image_path ? [$product->image_path] : []),
             'cantidad' => (int) $reservation->cantidad,
             'stock_available' => (int) $product->stock,
             'expires_at' => $reservation->expires_at?->toIso8601String(),

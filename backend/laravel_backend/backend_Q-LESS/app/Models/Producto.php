@@ -14,9 +14,14 @@ class Producto extends Model
         'precio',
         'stock',
         'image_path',
+        'product_images',
         'categoria',
         'categoria_id',
         'user_id',
+    ];
+
+    protected $casts = [
+        'product_images' => 'array',
     ];
 
     public function setStockAttribute($value): void

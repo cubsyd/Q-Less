@@ -33,22 +33,45 @@ class ProductoController extends Controller
         }
     }
 
+    private function storeUploadedFile($file): string
+    {
+        $directory = public_path('storage/productos');
+        if (!File::exists($directory)) {
+            File::makeDirectory($directory, 0755, true);
+        }
+
+        $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
+        $file->move($directory, $filename);
+
+        return url('storage/productos/' . $filename);
+    }
+
     private function storeImage(Request $request): ?string
     {
         if (!$request->hasFile('image')) {
             return null;
         }
 
-        $directory = public_path('storage/productos');
-        if (!File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true);
+        return $this->storeUploadedFile($request->file('image'));
+    }
+
+    private function storeImages(Request $request): array
+    {
+        $images = [];
+
+        if ($request->hasFile('images')) {
+            foreach ((array) $request->file('images') as $file) {
+                if ($file) {
+                    $images[] = $this->storeUploadedFile($file);
+                }
+            }
         }
 
-        $file = $request->file('image');
-        $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
-        $file->move($directory, $filename);
+        if (empty($images) && $request->hasFile('image')) {
+            $images[] = $this->storeUploadedFile($request->file('image'));
+        }
 
-        return url('storage/productos/' . $filename);
+        return array_slice($images, 0, 5);
     }
 
     private function deleteImageIfExists(?string $imagePath): void
@@ -72,6 +95,13 @@ class ProductoController extends Controller
         }
     }
 
+    private function deleteImagesIfExist(?array $imagePaths): void
+    {
+        foreach ($imagePaths ?? [] as $imagePath) {
+            $this->deleteImageIfExists($imagePath);
+        }
+    }
+
     public function index()
     {
         $this->cartReservationService->cleanupExpiredReservations();
@@ -90,16 +120,19 @@ class ProductoController extends Controller
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
-            'image' => 'required|image|mimes:jpg,jpeg,png|max:5120',
+            'image' => 'required_without:images|nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpg,jpeg,png|max:5120',
             'user_id' => 'nullable|exists:users,id',
         ]);
 
         $this->resolveCategoria($data);
         $data['stock'] = max(0, (int) $data['stock']);
 
-        $imagePath = $this->storeImage($request);
-        if ($imagePath) {
-            $data['image_path'] = $imagePath;
+        $imagePaths = $this->storeImages($request);
+        if (!empty($imagePaths)) {
+            $data['image_path'] = $imagePaths[0];
+            $data['product_images'] = $imagePaths;
         }
 
         $producto = Producto::create($data);
@@ -128,6 +161,8 @@ class ProductoController extends Controller
             'precio' => 'sometimes|required|numeric|min:0',
             'stock' => 'sometimes|required|integer|min:0',
             'image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|mimes:jpg,jpeg,png|max:5120',
             'user_id' => 'nullable|exists:users,id',
         ]);
 
@@ -137,10 +172,11 @@ class ProductoController extends Controller
             $data['stock'] = max(0, (int) $data['stock']);
         }
 
-        $imagePath = $this->storeImage($request);
-        if ($imagePath) {
-            $this->deleteImageIfExists($producto->image_path);
-            $data['image_path'] = $imagePath;
+        $imagePaths = $this->storeImages($request);
+        if (!empty($imagePaths)) {
+            $this->deleteImagesIfExist($producto->product_images ?: [$producto->image_path]);
+            $data['image_path'] = $imagePaths[0];
+            $data['product_images'] = $imagePaths;
         }
 
         $producto->update($data);
@@ -152,7 +188,7 @@ class ProductoController extends Controller
     {
         $producto = Producto::findOrFail($id);
 
-        $this->deleteImageIfExists($producto->image_path);
+        $this->deleteImagesIfExist($producto->product_images ?: [$producto->image_path]);
 
         $producto->delete();
 
