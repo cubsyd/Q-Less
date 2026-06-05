@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -25,7 +26,9 @@ export class ProductService {
   }
 
   createProduct(productData: FormData): Observable<any> {
-    return this.http.post<any>(this.API_URL, productData);
+    return this.http.post(`${this.API_URL}`, productData, { responseType: 'text' }).pipe(
+      map((response) => this.parseOptionalJson(response))
+    );
   }
 
   updateProduct(id: number | string, productData: any): Observable<any> {
@@ -34,7 +37,9 @@ export class ProductService {
         productData.append('_method', 'PUT');
       }
 
-      return this.http.post<any>(`${this.API_URL}/${id}`, productData);
+      return this.http.post(`${this.API_URL}/${id}`, productData, { responseType: 'text' }).pipe(
+        map((response) => this.parseOptionalJson(response))
+      );
     }
 
     return this.http.put<any>(`${this.API_URL}/${id}`, productData);
@@ -42,5 +47,25 @@ export class ProductService {
 
   deleteProduct(id: number | string): Observable<any> {
     return this.http.delete<any>(`${this.API_URL}/${id}`);
+  }
+
+  private parseOptionalJson(response: string): any {
+    const trimmed = response.trim();
+
+    if (!trimmed) {
+      return {};
+    }
+
+    const jsonStart = trimmed.search(/[\[{]/);
+
+    if (jsonStart === -1) {
+      return { raw: response };
+    }
+
+    try {
+      return JSON.parse(trimmed.slice(jsonStart));
+    } catch {
+      return { raw: response };
+    }
   }
 }

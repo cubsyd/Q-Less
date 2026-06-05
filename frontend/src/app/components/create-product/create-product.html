@@ -58,19 +58,15 @@
       <div class="form-group full-width">
         <label>Imagen del producto</label>
         <div class="image-upload-section">
-          <input type="file" (change)="onFileSelected($event)" accept="image/png,image/jpg,image/jpeg" [disabled]="isLoading" style="display: none;" #fileInput />
+          <input type="file" multiple (change)="onFileSelected($event)" accept="image/png,image/jpg,image/jpeg" [disabled]="isLoading" style="display: none;" #fileInput />
           <div class="image-placeholders">
-            <div class="image-placeholder" (click)="fileInput.click()">
-              <img *ngIf="imagePreview" [src]="imagePreview" alt="Vista previa" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
-              <span *ngIf="!imagePreview">+</span>
-              <button *ngIf="imagePreview" type="button" class="btn-remove-image" (click)="clearImage(); $event.stopPropagation();">X</button>
+            <div *ngFor="let slot of imageSlots; let index = index" class="image-placeholder" (click)="selectImageSlot(index, fileInput)">
+              <img *ngIf="imagePreviews[index]" [src]="imagePreviews[index]" alt="Vista previa" style="width: 100%; height: 100%; object-fit: cover; border-radius: 6px;" />
+              <span *ngIf="!imagePreviews[index]">+</span>
+              <button *ngIf="imagePreviews[index]" type="button" class="btn-remove-image" (click)="removeImage(index); $event.stopPropagation();">X</button>
             </div>
-            <div class="image-placeholder-empty"></div>
-            <div class="image-placeholder-empty"></div>
-            <div class="image-placeholder-empty"></div>
-            <div class="image-placeholder-empty"></div>
           </div>
-          <small class="text-muted">Formatos: PNG, JPG, JPEG (max. 5MB)</small>
+          <small class="text-muted">Puedes subir hasta 5 imagenes. Formatos: PNG, JPG, JPEG (max. 5MB cada una)</small>
         </div>
       </div>
 

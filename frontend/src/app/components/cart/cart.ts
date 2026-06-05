@@ -17,7 +17,9 @@ export class CartComponent implements OnInit, OnDestroy {
   cartMessage = '';
   isRedirectingToPayment = false;
   loadingItems = new Set<number>();
+  selectedImageIndexes: Record<number, number> = {};
   private countdownIntervalId: number | null = null;
+  private cartRefreshIntervalId: number | null = null;
 
   constructor(
     private authService: AuthService,
@@ -51,11 +53,19 @@ export class CartComponent implements OnInit, OnDestroy {
     this.countdownIntervalId = window.setInterval(() => {
       this.updateDisplayedCountdowns();
     }, 1000);
+
+    this.cartRefreshIntervalId = window.setInterval(() => {
+      this.cartService.syncCurrentUser();
+    }, 5000);
   }
 
   ngOnDestroy(): void {
     if (this.countdownIntervalId !== null) {
       window.clearInterval(this.countdownIntervalId);
+    }
+
+    if (this.cartRefreshIntervalId !== null) {
+      window.clearInterval(this.cartRefreshIntervalId);
     }
   }
 
@@ -176,6 +186,12 @@ export class CartComponent implements OnInit, OnDestroy {
 
     this.cartMessage = '';
     this.isRedirectingToPayment = true;
+    const paymentWindow = window.open('', '_blank');
+
+    if (paymentWindow) {
+      paymentWindow.document.write('Abriendo Mercado Pago...');
+    }
+
     this.cartService.createPaymentPreference().subscribe({
 
       next: (response: any) => {
@@ -189,6 +205,7 @@ export class CartComponent implements OnInit, OnDestroy {
           console.error('Mercado Pago no devolvio URL');
 
           this.isRedirectingToPayment = false;
+          paymentWindow?.close();
 
           this.cartMessage =
             'Mercado Pago no devolvio una URL de pago valida.';
@@ -207,7 +224,13 @@ export class CartComponent implements OnInit, OnDestroy {
 
         window.alert(this.cartMessage);
         this.cartService.syncCurrentUser();
-        window.location.href = paymentUrl;
+
+        if (paymentWindow) {
+          paymentWindow.location.href = paymentUrl;
+        } else {
+          window.location.href = paymentUrl;
+        }
+
         this.isRedirectingToPayment = false;
       },
 
@@ -223,6 +246,7 @@ export class CartComponent implements OnInit, OnDestroy {
         );
 
         this.isRedirectingToPayment = false;
+        paymentWindow?.close();
 
         this.cartMessage =
           error?.error?.mercadopago_error?.message
@@ -278,11 +302,74 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   getImageUrl(item: CartItem): string {
-    if (!item.image_path) {
+    const images = this.getItemImages(item);
+
+    if (images.length === 0) {
       return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="180"><rect fill="%23ececec" width="220" height="180"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="13">Sin imagen</text></svg>';
     }
 
-    return item.image_path;
+    const selectedIndex = this.getSelectedImageIndex(item);
+
+    return images[selectedIndex] || images[0];
+  }
+
+  getItemImages(item: CartItem): string[] {
+    const images = Array.isArray(item.product_images)
+      ? item.product_images.filter(Boolean)
+      : [];
+
+    if (images.length === 0 && item.image_path) {
+      images.push(item.image_path);
+    }
+
+    return images;
+  }
+
+  hasMultipleImages(item: CartItem): boolean {
+    return this.getItemImages(item).length > 1;
+  }
+
+  nextImage(item: CartItem, event: Event): void {
+    event.stopPropagation();
+    const images = this.getItemImages(item);
+
+    if (images.length < 2) {
+      return;
+    }
+
+    const currentIndex = this.getSelectedImageIndex(item);
+    this.selectedImageIndexes[item.id] = (currentIndex + 1) % images.length;
+  }
+
+  previousImage(item: CartItem, event: Event): void {
+    event.stopPropagation();
+    const images = this.getItemImages(item);
+
+    if (images.length < 2) {
+      return;
+    }
+
+    const currentIndex = this.getSelectedImageIndex(item);
+    this.selectedImageIndexes[item.id] = (currentIndex - 1 + images.length) % images.length;
+  }
+
+  getImagePosition(item: CartItem): string {
+    const images = this.getItemImages(item);
+    const selectedIndex = this.getSelectedImageIndex(item);
+
+    return `${selectedIndex + 1}/${images.length}`;
+  }
+
+  private getSelectedImageIndex(item: CartItem): number {
+    const images = this.getItemImages(item);
+    const selectedIndex = this.selectedImageIndexes[item.id] || 0;
+
+    if (images.length === 0 || selectedIndex < images.length) {
+      return selectedIndex;
+    }
+
+    this.selectedImageIndexes[item.id] = 0;
+    return 0;
   }
 
   onImageError(event: any): void {

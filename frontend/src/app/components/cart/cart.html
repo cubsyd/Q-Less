@@ -59,6 +59,25 @@
               [src]="getImageUrl(item)"
               (error)="onImageError($event)"
               [alt]="item.nombre" />
+            <button
+              *ngIf="hasMultipleImages(item)"
+              type="button"
+              class="gallery-arrow gallery-arrow-left"
+              aria-label="Imagen anterior"
+              title="Imagen anterior"
+              (click)="previousImage(item, $event)">
+              &lsaquo;
+            </button>
+            <button
+              *ngIf="hasMultipleImages(item)"
+              type="button"
+              class="gallery-arrow gallery-arrow-right"
+              aria-label="Imagen siguiente"
+              title="Imagen siguiente"
+              (click)="nextImage(item, $event)">
+              &rsaquo;
+            </button>
+            <span *ngIf="hasMultipleImages(item)" class="gallery-count">{{ getImagePosition(item) }}</span>
           </div>
 
           <div class="item-info">

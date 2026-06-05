@@ -59,6 +59,25 @@
         <article *ngFor="let product of filteredProducts" class="product-card">
           <div class="product-image">
             <img [src]="getImageUrl(product)" (error)="onImageError($event)" [alt]="product.nombre" />
+            <button
+              *ngIf="hasMultipleImages(product)"
+              type="button"
+              class="gallery-arrow gallery-arrow-left"
+              aria-label="Imagen anterior"
+              title="Imagen anterior"
+              (click)="previousImage(product, $event)">
+              &lsaquo;
+            </button>
+            <button
+              *ngIf="hasMultipleImages(product)"
+              type="button"
+              class="gallery-arrow gallery-arrow-right"
+              aria-label="Imagen siguiente"
+              title="Imagen siguiente"
+              (click)="nextImage(product, $event)">
+              &rsaquo;
+            </button>
+            <span *ngIf="hasMultipleImages(product)" class="gallery-count">{{ getImagePosition(product) }}</span>
           </div>
           <div class="product-body">
             <h3 class="product-name">{{ product.nombre }}</h3>

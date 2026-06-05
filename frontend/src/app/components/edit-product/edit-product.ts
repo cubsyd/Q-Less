@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import { FormsModule } from "@angular/forms";
@@ -32,7 +32,11 @@ export class EditProduct implements OnInit {
     image_path: ""
   };
   selectedFile: File | null = null;
+  selectedFiles: File[] = [];
   previewUrl: string | null = null;
+  previewUrls: string[] = [];
+  readonly imageSlots = [0, 1, 2, 3, 4];
+  pendingImageSlot = 0;
   isLoading = false;
   errors: { type: string; message: string }[] = [];
 
@@ -40,7 +44,8 @@ export class EditProduct implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private authService: AuthService,
-    private productService: ProductService
+    private productService: ProductService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -73,7 +78,8 @@ export class EditProduct implements OnInit {
         descripcion: navigationProduct.descripcion || "",
         precio: navigationProduct.precio,
         stock: navigationProduct.stock,
-        image_path: navigationProduct.image_path || ""
+        image_path: navigationProduct.image_path || "",
+        product_images: navigationProduct.product_images || []
       };
     }
 
@@ -101,7 +107,8 @@ export class EditProduct implements OnInit {
           descripcion: found.descripcion || "",
           precio: found.precio,
           stock: found.stock,
-          image_path: found.image_path || ""
+          image_path: found.image_path || "",
+          product_images: found.product_images || []
         };
       },
       (error) => {
@@ -111,40 +118,96 @@ export class EditProduct implements OnInit {
     );
   }
 
+  selectImageSlot(index: number, fileInput: HTMLInputElement): void {
+    this.pendingImageSlot = index;
+    fileInput.click();
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length) {
-      const file = input.files[0];
+      const availableSlots = Math.max(0, 5 - this.pendingImageSlot);
+      const files = Array.from(input.files).slice(0, availableSlots);
       this.clearErrors();
 
       const validTypes = ["image/png", "image/jpg", "image/jpeg"];
-      if (!validTypes.includes(file.type)) {
+      const invalidFile = files.find(file => !validTypes.includes(file.type));
+      if (invalidFile) {
         this.addError("warning", "Tipo de imagen invalido. Solo PNG, JPG o JPEG");
+        input.value = "";
         return;
       }
 
       const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      const oversizedFile = files.find(file => file.size > maxSize);
+      if (oversizedFile) {
+        const sizeMB = (oversizedFile.size / 1024 / 1024).toFixed(2);
         this.addError("warning", `La imagen pesa ${sizeMB}MB. Maximo 5MB`);
+        input.value = "";
         return;
       }
 
-      this.selectedFile = file;
+      files.forEach((file, index) => {
+        const targetIndex = this.pendingImageSlot + index;
+        this.selectedFiles[targetIndex] = file;
 
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        if (e.target?.result) {
-          this.previewUrl = e.target.result as string;
-        }
-      };
-      reader.readAsDataURL(file);
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          if (e.target?.result) {
+            this.previewUrls[targetIndex] = e.target.result as string;
+            this.previewUrl = this.previewUrls[0] || null;
+            this.cdr.detectChanges();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+
+      this.selectedFile = this.selectedFiles.find(Boolean) || null;
+      this.previewUrl = this.previewUrls[0] || null;
+      input.value = "";
     }
+  }
+
+  getDisplayImage(index: number): string | null {
+    if (this.previewUrls[index]) {
+      return this.previewUrls[index];
+    }
+
+    if (this.previewUrls.length > 0) {
+      return null;
+    }
+
+    return this.existingImages[index] || null;
+  }
+
+  get existingImages(): string[] {
+    const images = Array.isArray(this.product.product_images)
+      ? this.product.product_images.filter(Boolean)
+      : [];
+
+    if (images.length === 0 && this.product.image_path) {
+      images.push(this.product.image_path);
+    }
+
+    return images.slice(0, 5);
+  }
+
+  removeImage(index: number): void {
+    if (!this.previewUrls[index]) {
+      return;
+    }
+
+    delete this.selectedFiles[index];
+    delete this.previewUrls[index];
+    this.selectedFile = this.selectedFiles.find(Boolean) || null;
+    this.previewUrl = this.previewUrls[0] || null;
   }
 
   clearSelectedImage(): void {
     this.selectedFile = null;
+    this.selectedFiles = [];
     this.previewUrl = null;
+    this.previewUrls = [];
   }
 
   validateForm(): boolean {
@@ -203,9 +266,13 @@ export class EditProduct implements OnInit {
       formData.append("categoria_id", String(this.product.categoria_id));
     }
 
-    if (this.selectedFile) {
-      formData.append("image", this.selectedFile, this.selectedFile.name);
-    }
+    this.imageSlots.forEach((index) => {
+      const file = this.selectedFiles[index];
+
+      if (file) {
+        formData.append("images[]", file, file.name);
+      }
+    });
 
     this.productService.updateProduct(this.productId, formData).subscribe(
       () => {

@@ -9,6 +9,7 @@ export interface CartItem {
   nombre: string;
   precio: number;
   image_path?: string | null;
+  product_images?: string[] | null;
   cantidad: number;
   stock_available?: number;
   expires_at?: string | null;

@@ -25,6 +25,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
   addingProductIds = new Set<number>();
   favoriteProductIds = new Set<number>();
   updatingFavoriteIds = new Set<number>();
+  selectedImageIndexes: Record<number, number> = {};
+  private productsRefreshIntervalId: number | null = null;
 
   readonly categories = [
     'Todos',
@@ -75,9 +77,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
       this.loadProducts();
     });
 
+    this.productsRefreshIntervalId = window.setInterval(() => {
+      this.loadProducts();
+    }, 5000);
   }
 
   ngOnDestroy(): void {
+    if (this.productsRefreshIntervalId !== null) {
+      window.clearInterval(this.productsRefreshIntervalId);
+    }
   }
 
   setCategory(category: string): void {
@@ -144,11 +152,80 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   getImageUrl(product: any): string {
-    if (!product || !product.image_path) {
+    const images = this.getProductImages(product);
+
+    if (images.length === 0) {
       return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="220" height="180"><rect fill="%23f0f0f0" width="220" height="180"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="14">Sin imagen</text></svg>';
     }
 
-    return product.image_path;
+    const selectedIndex = this.getSelectedImageIndex(product);
+
+    return images[selectedIndex] || images[0];
+  }
+
+  getProductImages(product: any): string[] {
+    if (!product) {
+      return [];
+    }
+
+    const images = Array.isArray(product.product_images)
+      ? product.product_images.filter(Boolean)
+      : [];
+
+    if (images.length === 0 && product.image_path) {
+      images.push(product.image_path);
+    }
+
+    return images;
+  }
+
+  hasMultipleImages(product: any): boolean {
+    return this.getProductImages(product).length > 1;
+  }
+
+  nextImage(product: any, event: Event): void {
+    event.stopPropagation();
+    const images = this.getProductImages(product);
+
+    if (images.length < 2) {
+      return;
+    }
+
+    const productId = Number(product.id);
+    const currentIndex = this.getSelectedImageIndex(product);
+    this.selectedImageIndexes[productId] = (currentIndex + 1) % images.length;
+  }
+
+  previousImage(product: any, event: Event): void {
+    event.stopPropagation();
+    const images = this.getProductImages(product);
+
+    if (images.length < 2) {
+      return;
+    }
+
+    const productId = Number(product.id);
+    const currentIndex = this.getSelectedImageIndex(product);
+    this.selectedImageIndexes[productId] = (currentIndex - 1 + images.length) % images.length;
+  }
+
+  getImagePosition(product: any): string {
+    const images = this.getProductImages(product);
+    const selectedIndex = this.getSelectedImageIndex(product);
+
+    return `${selectedIndex + 1}/${images.length}`;
+  }
+
+  private getSelectedImageIndex(product: any): number {
+    const images = this.getProductImages(product);
+    const selectedIndex = this.selectedImageIndexes[Number(product?.id)] || 0;
+
+    if (images.length === 0 || selectedIndex < images.length) {
+      return selectedIndex;
+    }
+
+    this.selectedImageIndexes[Number(product.id)] = 0;
+    return 0;
   }
 
   onImageError(event: any): void {

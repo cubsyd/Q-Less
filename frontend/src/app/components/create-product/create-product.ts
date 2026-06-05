@@ -1,4 +1,4 @@
-import { Component, OnInit } from "@angular/core";
+import { ChangeDetectorRef, Component, OnInit } from "@angular/core";
 import { CommonModule } from "@angular/common";
 import { RouterModule } from "@angular/router";
 import { Router } from "@angular/router";
@@ -27,7 +27,11 @@ export class CreateProduct implements OnInit {
   price: number | null = null;
   stock: number | null = null;
   selectedFile: File | null = null;
+  selectedFiles: File[] = [];
   imagePreview: string | null = null;
+  imagePreviews: string[] = [];
+  readonly imageSlots = [0, 1, 2, 3, 4];
+  pendingImageSlot = 0;
   errors: { type: string; message: string }[] = [];
   isLoading = false;
   showModal = false;
@@ -38,7 +42,8 @@ export class CreateProduct implements OnInit {
   constructor(
     private productService: ProductService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -68,43 +73,70 @@ export class CreateProduct implements OnInit {
     this.errors.push({ type, message });
   }
 
+  selectImageSlot(index: number, fileInput: HTMLInputElement): void {
+    this.pendingImageSlot = index;
+    fileInput.click();
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length) {
-      const file = input.files[0];
+      const availableSlots = Math.max(0, 5 - this.pendingImageSlot);
+      const files = Array.from(input.files).slice(0, availableSlots);
       this.clearErrors();
 
       const validTypes = ["image/png", "image/jpg", "image/jpeg"];
 
-      if (!validTypes.includes(file.type)) {
+      const invalidFile = files.find(file => !validTypes.includes(file.type));
+      if (invalidFile) {
         this.addError("warning", "Tipo de imagen invalido. Solo se permiten PNG, JPG o JPEG");
+        input.value = "";
         return;
       }
 
       const maxSize = 5 * 1024 * 1024;
-      if (file.size > maxSize) {
-        this.addError("warning", "La imagen no debe exceder 5MB. Tu archivo pesa: " + (file.size / 1024 / 1024).toFixed(2) + "MB");
+      const oversizedFile = files.find(file => file.size > maxSize);
+      if (oversizedFile) {
+        this.addError("warning", "La imagen no debe exceder 5MB. Tu archivo pesa: " + (oversizedFile.size / 1024 / 1024).toFixed(2) + "MB");
+        input.value = "";
         return;
       }
 
-      this.selectedFile = file;
+      files.forEach((file, index) => {
+        const targetIndex = this.pendingImageSlot + index;
+        this.selectedFiles[targetIndex] = file;
 
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        if (e.target?.result) {
-          this.imagePreview = e.target.result as string;
-        }
-      };
-      reader.readAsDataURL(file);
+        const reader = new FileReader();
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          if (e.target?.result) {
+            this.imagePreviews[targetIndex] = e.target.result as string;
+            this.imagePreview = this.imagePreviews[0] || null;
+            this.cdr.detectChanges();
+          }
+        };
+        reader.readAsDataURL(file);
+      });
 
+      this.selectedFile = this.selectedFiles.find(Boolean) || null;
+      this.imagePreview = this.imagePreviews[0] || null;
+      input.value = "";
       this.clearErrors();
-      this.addError("success", "Imagen cargada correctamente");
+      this.addError("success", files.length > 1 ? "Imagenes cargadas correctamente" : "Imagen cargada correctamente");
     }
+  }
+
+  removeImage(index: number): void {
+    delete this.selectedFiles[index];
+    delete this.imagePreviews[index];
+    this.selectedFile = this.selectedFiles.find(Boolean) || null;
+    this.imagePreview = this.imagePreviews[0] || null;
   }
 
   clearImage(): void {
     this.selectedFile = null;
+    this.selectedFiles = [];
     this.imagePreview = null;
+    this.imagePreviews = [];
   }
 
   validateForm(): boolean {
@@ -142,8 +174,8 @@ export class CreateProduct implements OnInit {
       isValid = false;
     }
 
-    if (!this.selectedFile) {
-      this.addError("danger", "Debes seleccionar una imagen para el producto");
+    if (this.selectedFiles.filter(Boolean).length === 0) {
+      this.addError("danger", "Debes seleccionar al menos una imagen para el producto");
       isValid = false;
     }
 
@@ -165,7 +197,13 @@ export class CreateProduct implements OnInit {
     formData.append("descripcion", this.description);
     formData.append("precio", String(this.price));
     formData.append("stock", String(this.stock));
-    formData.append("image", this.selectedFile!, this.selectedFile!.name);
+    this.imageSlots.forEach((index) => {
+      const file = this.selectedFiles[index];
+
+      if (file) {
+        formData.append("images[]", file, file.name);
+      }
+    });
 
     if (userId) {
       formData.append("user_id", userId);
