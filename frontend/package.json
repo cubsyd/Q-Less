@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --host 0.0.0.0 --port 4201",
+    "start": "node server.js",
     "dev": "ng serve --port 4201",
     "build": "ng build",
     "start:prod": "npm run build && node server.js",
