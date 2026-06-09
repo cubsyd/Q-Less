@@ -9,7 +9,7 @@ import { AuthService } from '../../services/auth.js';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './register.html',
-  styleUrl: './register.css'
+  styleUrls: ['./register.css']
 })
 export class RegisterComponent {
 
@@ -41,6 +41,55 @@ export class RegisterComponent {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
+  isValidPhone(phone: string): boolean {
+    return /^[0-9+\s()\-]+$/.test(phone);
+  }
+
+  flattenServerErrors(errors: any): string[] {
+    if (!errors) {
+      return [];
+    }
+
+    if (typeof errors === 'string') {
+      return [errors];
+    }
+
+    if (Array.isArray(errors)) {
+      return errors.flatMap((item) => this.flattenServerErrors(item));
+    }
+
+    if (typeof errors === 'object') {
+      return Object.values(errors).flatMap((item) => this.flattenServerErrors(item));
+    }
+
+    return [String(errors)];
+  }
+
+  getServerErrorMessages(error: any): string[] {
+    const serverErrors = error?.error?.errors;
+    const messages = this.flattenServerErrors(serverErrors);
+
+    if (messages.length > 0) {
+      return messages.map(String).filter(Boolean);
+    }
+
+    const serverMessage = error?.error?.message || error?.message || '';
+    return typeof serverMessage === 'string' && serverMessage.trim()
+      ? [serverMessage]
+      : [];
+  }
+
+  isDuplicateEmailError(error: any): boolean {
+    const messages = this.getServerErrorMessages(error).map((msg) => msg.toLowerCase());
+    return messages.some((text) =>
+      text.includes('ya esta registrado') ||
+      text.includes('already been taken') ||
+      text.includes('duplicate') ||
+      text.includes('correo duplicado') ||
+      text.includes('correo ya esta registrado')
+    );
+  }
+
   validateForm(): boolean {
 
     this.clearErrors();
@@ -66,9 +115,13 @@ export class RegisterComponent {
     }
 
     if (!this.user.telefono.trim()) {
-
       this.addError('danger', 'El telefono es requerido');
-
+      isValid = false;
+    } else if (!this.isValidPhone(this.user.telefono)) {
+      this.addError(
+        'danger',
+        'El telefono solo puede contener numeros, espacios, parentesis, + o -.'
+      );
       isValid = false;
     }
 
@@ -162,7 +215,7 @@ export class RegisterComponent {
 
         this.isLoading = false;
 
-        if (res?.status) {
+        if (res?.status === true) {
           this.addError(
             res?.email_sent === false ? 'warning' : 'success',
             res?.message || (
@@ -178,11 +231,8 @@ export class RegisterComponent {
             });
           }, 3500);
 
-        } else {
-          this.addError(
-            'danger',
-            'La respuesta del servidor no fue valida.'
-          );
+        } else if (res?.status === false && res?.message) {
+          this.addError('danger', res.message);
         }
       },
 
@@ -190,16 +240,19 @@ export class RegisterComponent {
 
         this.isLoading = false;
 
-        const serverErrors = err?.error?.errors;
-        const messages = serverErrors
-          ? Object.values(serverErrors).flat().filter(Boolean)
-          : [];
+        if (this.isDuplicateEmailError(err)) {
+          this.addError(
+            'danger',
+            'Este correo ya está registrado. Inicia sesión con tu cuenta.'
+          );
+          return;
+        }
 
+        const messages = this.getServerErrorMessages(err);
         if (messages.length > 0) {
           messages.forEach((message) => {
-            this.addError('danger', String(message));
+            this.addError('danger', message);
           });
-
           return;
         }
 

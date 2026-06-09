@@ -23,7 +23,7 @@ interface SavedConversation {
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './chatbot.html',
-  styleUrl: './chatbot.css'
+  styleUrls: ['./chatbot.css']
 })
 export class ChatbotComponent implements OnInit {
   private readonly welcomeMessage: ConversationMessage = {

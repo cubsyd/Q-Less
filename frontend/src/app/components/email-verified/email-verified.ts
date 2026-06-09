@@ -8,7 +8,7 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './email-verified.html',
-  styleUrl: './email-verified.css'
+  styleUrls: ['./email-verified.css']
 })
 export class EmailVerifiedComponent {
   status = 'success';

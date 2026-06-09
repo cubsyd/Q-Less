@@ -400,20 +400,28 @@
     padding: 1rem;
   }
 
+  .brand h1 {
+    font-size: 1.4rem;
+  }
+
   .main-nav {
-    gap: 1rem;
-    font-size: 0.9rem;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
   }
 
   .top-actions {
     flex-direction: column;
     width: 100%;
+    gap: 0.5rem;
   }
 
   .top-actions input,
   .btn-create,
   .btn-logout {
     width: 100%;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
   }
 
   .hero {
@@ -421,8 +429,87 @@
     padding: 1rem;
   }
 
+  .hero h2 {
+    font-size: 1.2rem;
+  }
+
+  .hero p {
+    font-size: 0.85rem;
+  }
+
   .section-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .cart-link {
+    width: 100%;
+    justify-content: center;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .cart-badge {
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand h1 {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+
+  .main-nav {
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .main-nav a {
+    padding: 0.35rem;
+  }
+
+  .top-actions input {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .product-image {
+    height: 120px;
+  }
+
+  .product-body {
+    padding: 0.75rem;
+  }
+
+  .product-name {
+    font-size: 0.85rem;
+  }
+
+  .product-actions {
+    gap: 0.35rem;
+  }
+
+  .btn-add,
+  .btn-favorite,
+  .btn-edit {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .sidebar-colecciones h3 {
+    font-size: 0.95rem;
+  }
+
+  .collection-item {
+    padding: 0.6rem;
+    font-size: 0.85rem;
   }
 }

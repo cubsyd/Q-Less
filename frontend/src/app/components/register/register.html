@@ -47,7 +47,7 @@
           <input type="password" [(ngModel)]="user.password_confirmation" name="password_confirmation" placeholder="Confirmar contrasena" required>
         </div>
 
-        <button type="submit" class="login-button">Registrarse</button>
+        <button type="submit" class="login-button" [disabled]="isLoading">Registrarse</button>
 
         <div class="divider">
           <span>O</span>

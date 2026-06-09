@@ -12,7 +12,7 @@ import { FavoriteService } from '../../services/favorite.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './products.html',
-  styleUrl: './products.css'
+  styleUrls: ['./products.css']
 })
 export class ProductsComponent implements OnInit, OnDestroy {
   userName: string | null = '';
@@ -348,6 +348,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
     this.updatingFavoriteIds.add(product.id);
     this.cartMessage = '';
+  
     this.cdr.detectChanges();
 
     this.favoriteService.toggleFavorite(userId, product.id).subscribe({

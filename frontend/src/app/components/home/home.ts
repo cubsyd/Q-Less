@@ -13,7 +13,7 @@ import { FavoriteService } from '../../services/favorite.service';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './home.html',
-  styleUrl: './home.css'
+  styleUrls: ['./home.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
   readonly categories = [

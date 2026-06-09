@@ -21,7 +21,7 @@
         </div>
       </div>
 
-      <form (ngSubmit)="iniciarSesion()">
+      <form (ngSubmit)="iniciarSesion()" #loginForm="ngForm" novalidate>
         <div class="input-group">
           <i class="bi bi-person-fill"></i>
           <input type="email" [(ngModel)]="credentials.email" name="email" placeholder="Correo o número" required>

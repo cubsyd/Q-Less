@@ -10,7 +10,7 @@ import { ProductService } from "../../services/product.service";
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: "./edit-product.html",
-  styleUrl: "./edit-product.css",
+  styleUrls: ['./edit-product.css'],
 })
 export class EditProduct implements OnInit {
   categories = [

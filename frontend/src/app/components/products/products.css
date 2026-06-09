@@ -333,25 +333,156 @@
   .main-header {
     flex-direction: column;
     gap: 0.8rem;
+    padding: 1rem;
+  }
+
+  .brand h1 {
+    font-size: 1.4rem;
+  }
+
+  .main-nav {
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
   }
 
   .content-section {
     grid-template-columns: 1fr;
     padding: 1rem;
+    gap: 1rem;
+  }
+
+  .sidebar-colecciones {
+    order: 2;
+  }
+
+  .productos-section {
+    order: 1;
   }
 
   .top-actions {
     width: 100%;
     flex-direction: column;
+    gap: 0.5rem;
   }
 
   .top-actions input,
-  .btn-logout {
+  .btn-logout,
+  .btn-create {
     width: 100%;
+    font-size: 0.9rem;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
   }
 
   .section-head {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .cart-link {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .product-image {
+    height: 130px;
+  }
+
+  .product-body {
+    padding: 0.75rem;
+  }
+
+  .product-name {
+    font-size: 0.9rem;
+  }
+
+  .product-price {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand h1 {
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+  }
+
+  .main-nav {
+    gap: 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .top-actions input {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .product-card {
+    border-radius: 10px;
+  }
+
+  .product-image {
+    height: 100px;
+  }
+
+  .product-body {
+    padding: 0.6rem;
+  }
+
+  .product-name {
+    font-size: 0.8rem;
+    line-height: 1.2;
+  }
+
+  .product-price {
+    font-size: 0.85rem;
+    margin: 0 0 0.5rem;
+  }
+
+  .product-stock-warning {
+    font-size: 0.75rem;
+    margin: -0.2rem 0 0.5rem;
+  }
+
+  .product-description {
+    font-size: 0.8rem;
+    min-height: 2rem;
+    margin: 0 0 0.75rem;
+  }
+
+  .product-actions {
+    gap: 0.3rem;
+  }
+
+  .btn-add,
+  .btn-favorite,
+  .btn-edit {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+
+  .gallery-arrow {
+    width: 26px;
+    height: 26px;
+    font-size: 1.2rem;
+  }
+
+  .sidebar-colecciones h3 {
+    font-size: 0.9rem;
+  }
+
+  .collection-item {
+    padding: 0.6rem;
+    font-size: 0.8rem;
   }
 }

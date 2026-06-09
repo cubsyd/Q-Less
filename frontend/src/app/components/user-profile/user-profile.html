@@ -1,0 +1,65 @@
+<div class="orders-wrapper">
+
+  <header class="main-header">
+
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a routerLink="/mis-pedidos">Mis pedidos</a>
+      <a routerLink="/mi-perfil" class="active-link">Mi perfil</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="btn-logout" (click)="logout()">
+        Cerrar Sesion
+      </button>
+    </div>
+
+  </header>
+
+  <main class="orders-content">
+
+    <section class="orders-panel">
+
+      <div class="section-head">
+        <div>
+          <h2>Mi perfil</h2>
+          <p>
+            Aquí puedes actualizar tu información y foto de perfil.
+          </p>
+        </div>
+      </div>
+
+      <p class="orders-message" *ngIf="message">{{ message }}</p>
+
+      <div class="profile-form">
+        <label>Nombre</label>
+        <input type="text" [(ngModel)]="user.name" />
+
+        <label>Email</label>
+        <input type="email" [(ngModel)]="user.email" />
+
+        <label>Telefono</label>
+        <input type="text" [(ngModel)]="user.telefono" />
+
+        <div *ngIf="user.profile_photo_url">
+          <img [src]="user.profile_photo_url" alt="foto" style="max-width:120px;border-radius:8px;" />
+        </div>
+
+        <label>Subir foto</label>
+        <input type="file" (change)="onFileChange($event)" />
+
+        <div style="margin-top:12px;">
+          <button class="btn-success" (click)="save()">Guardar</button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+</div>

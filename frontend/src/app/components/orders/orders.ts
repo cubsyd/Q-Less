@@ -10,7 +10,7 @@ import { environment } from '../../../environments/environment';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './orders.html',
-  styleUrl: './orders.css'
+  styleUrls: ['./orders.css']
 })
 export class OrdersComponent implements OnInit, OnDestroy {
 

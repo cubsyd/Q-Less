@@ -9,7 +9,7 @@ import { AuthService } from '../../services/auth.js';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './login.html',
-  styleUrl: './login.css'
+  styleUrls: ['./login.css']
 })
 export class LoginComponent {
   credentials = { email: '', password: '' };
@@ -65,6 +65,32 @@ export class LoginComponent {
     return emailRegex.test(email);
   }
 
+  getServerErrorMessages(error: any): string[] {
+    const serverErrors = error?.error?.errors;
+    if (serverErrors) {
+      return Object.values(serverErrors)
+        .flat()
+        .map(String)
+        .filter(Boolean);
+    }
+
+    const serverMessage = error?.error?.message || error?.message || '';
+    return typeof serverMessage === 'string' && serverMessage.trim()
+      ? [serverMessage]
+      : [];
+  }
+
+  isEmailNotRegisteredError(error: any): boolean {
+    const message = String(error?.error?.message || error?.message || '').toLowerCase();
+    return (
+      error?.status === 404 ||
+      message.includes('usuario no existe') ||
+      message.includes('no esta registrado') ||
+      message.includes('email no existe') ||
+      message.includes('correo no existe')
+    );
+  }
+
   iniciarSesion(): void {
     if (!this.validateForm()) {
       return;
@@ -98,27 +124,36 @@ export class LoginComponent {
         this.isLoading = false;
         console.error('Error:', err);
 
+        if (this.isEmailNotRegisteredError(err)) {
+          this.addError('danger', 'El email no está registrado. ¿Quieres crear una cuenta?');
+          return;
+        }
+
         if (err?.status === 401) {
-          this.addError('danger', 'Email o contrasena incorrectos. Verifica tus credenciales.');
+          this.addError('danger', 'Email o contraseña incorrectos. Verifica tus credenciales.');
         } else if (err?.status === 403 && err?.error?.email_verification_required) {
           this.pendingVerificationEmail = this.credentials.email;
-          this.addError('danger', err?.error?.message || 'Debes verificar tu correo antes de iniciar sesion.');
+          this.addError('danger', err?.error?.message || 'Debes verificar tu correo antes de iniciar sesión.');
         } else if (err?.status === 422) {
-          this.addError('danger', 'Email o contrasena incorrectos. Intenta de nuevo.');
+          const messages = this.getServerErrorMessages(err);
+          if (messages.length > 0) {
+            messages.forEach((message) => this.addError('danger', message));
+          } else {
+            this.addError('danger', 'Email o contraseña incorrectos. Intenta de nuevo.');
+          }
         } else if (err?.status === 429) {
           this.addError('danger', 'Demasiados intentos fallidos. Intenta en unos minutos.');
         } else if (err?.status === 0) {
-          this.addError('danger', 'No se pudo conectar al servidor. Verifica tu conexion de internet.');
+          this.addError('danger', 'No se pudo conectar al servidor. Verifica tu conexión de internet.');
         } else if (err?.status === 500) {
-          this.addError('danger', 'Error del servidor. Intenta mas tarde.');
-        } else if (err?.error?.message?.includes('email')) {
-          this.addError('danger', 'El email no esta registrado. Quieres crear una cuenta?');
-        } else if (err?.error?.message?.includes('password')) {
-          this.addError('danger', 'La contrasena no es correcta.');
-        } else if (err?.error?.message) {
-          this.addError('danger', err.error.message);
+          this.addError('danger', 'Error del servidor. Intenta más tarde.');
         } else {
-          this.addError('danger', 'Error al iniciar sesion. Intenta de nuevo.');
+          const messages = this.getServerErrorMessages(err);
+          if (messages.length > 0) {
+            messages.forEach((message) => this.addError('danger', message));
+          } else {
+            this.addError('danger', 'Error al iniciar sesión. Intenta de nuevo.');
+          }
         }
       }
     });

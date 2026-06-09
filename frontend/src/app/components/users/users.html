@@ -1,0 +1,84 @@
+<div class="orders-wrapper">
+
+  <header class="main-header">
+
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a routerLink="/pedidos">Pedidos</a>
+      <a routerLink="/usuarios" class="active-link">Usuarios</a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="btn-logout" (click)="logout()">
+        Cerrar Sesion
+      </button>
+    </div>
+
+  </header>
+
+  <main class="orders-content">
+
+    <section class="orders-panel">
+
+      <div class="section-head">
+        <div>
+          <h2>Usuarios</h2>
+          <p>
+            Aqui puedes ver y administrar los usuarios registrados.
+          </p>
+        </div>
+      </div>
+
+      <p class="orders-message" *ngIf="message">
+        {{ message }}
+      </p>
+
+      <div class="orders-list" *ngIf="!isLoading || users.length > 0">
+
+        <div class="order-card" *ngFor="let user of users">
+
+          <div class="order-info">
+
+            <h3>
+              {{ user.name }}
+            </h3>
+
+            <p>
+              <strong>Email:</strong>
+              {{ user.email }}
+            </p>
+
+            <p>
+              <strong>Telefono:</strong>
+              {{ user.telefono }}
+            </p>
+
+            <p>
+              <strong>Rol:</strong>
+              {{ user.rol }}
+            </p>
+
+            <div *ngIf="user.profile_photo_url">
+              <img [src]="user.profile_photo_url" alt="foto" style="max-width:80px; border-radius:8px;" />
+            </div>
+
+          </div>
+
+          <div class="order-actions">
+            <button class="btn-danger" (click)="deleteUser(user)" [disabled]="deleting.has(user.id)">Eliminar</button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+</div>

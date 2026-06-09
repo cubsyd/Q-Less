@@ -9,7 +9,7 @@ import { CartItem, CartService } from '../../services/cart.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './cart.html',
-  styleUrl: './cart.css'
+  styleUrls: ['./cart.css']
 })
 export class CartComponent implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];

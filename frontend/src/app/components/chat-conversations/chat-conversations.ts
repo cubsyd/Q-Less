@@ -15,7 +15,7 @@ interface SavedConversation {
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './chat-conversations.html',
-  styleUrl: './chat-conversations.css'
+  styleUrls: ['./chat-conversations.css']
 })
 export class ChatConversationsComponent implements OnInit {
   conversations: SavedConversation[] = [];

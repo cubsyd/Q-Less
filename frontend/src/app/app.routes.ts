@@ -10,6 +10,8 @@ import { CartComponent } from './components/cart/cart.js';
 import { OrdersComponent } from './components/orders/orders.js';
 import { MyOrdersComponent } from './components/my-orders/my-orders.js';
 import { ChatConversationsComponent } from './components/chat-conversations/chat-conversations.js';
+import { UsersComponent } from './components/users/users.js';
+import { UserProfileComponent } from './components/user-profile/user-profile.js';
 import { AuthGuard } from './guards/auth.guard.js';
 import { EmailVerifiedComponent } from './components/email-verified/email-verified.js';
 
@@ -24,7 +26,9 @@ export const routes: Routes = [
   { path: 'carrito', component: CartComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-pedidos', component: MyOrdersComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-conversaciones', component: ChatConversationsComponent, canActivate: [AuthGuard], data: { userOnly: true } },
+  { path: 'mis-perfil', component: UserProfileComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'pedidos', component: OrdersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
+  { path: 'usuarios', component: UsersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
 
   { path: 'email-verificado', component: EmailVerifiedComponent },
 

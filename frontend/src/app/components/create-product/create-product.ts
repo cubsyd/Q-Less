@@ -11,7 +11,7 @@ import { ProductService } from "../../services/product.service";
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: "./create-product.html",
-  styleUrl: "./create-product.css",
+  styleUrls: ['./create-product.css'],
 })
 export class CreateProduct implements OnInit {
   categories = [

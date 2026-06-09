@@ -1,126 +1,184 @@
 .verified-container {
-  display: flex;
-  min-height: 100vh;
-  background: #78a800;
+display: flex;
+min-height: 100vh;
+background: #78a800;
 }
 
 .left-panel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 60px;
+flex: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 60px;
 }
 
 .brand {
-  max-width: 450px;
+max-width: 450px;
 }
 
 .brand h1 {
-  font-size: 90px;
-  font-weight: 700;
-  color: white;
-  margin: 0;
+font-size: 90px;
+font-weight: 700;
+color: white;
+margin: 0;
 }
 
 .line {
-  width: 180px;
-  height: 8px;
-  background: white;
-  margin: 20px 0 40px;
+width: 180px;
+height: 8px;
+background: white;
+margin: 20px 0 40px;
 }
 
 .brand p {
-  color: white;
-  font-size: 24px;
-  line-height: 1.6;
+color: white;
+font-size: 24px;
+line-height: 1.6;
 }
 
 .right-panel {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
+flex: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+padding: 40px;
 }
 
 .verified-card {
-  width: 100%;
-  max-width: 500px;
-  background: white;
-  border-radius: 25px;
-  padding: 50px;
-  text-align: center;
+width: 100%;
+max-width: 500px;
+background: white;
+border-radius: 25px;
+padding: 50px;
+text-align: center;
 }
 
 .success-icon {
-  width: 100px;
-  height: 100px;
-  background: #78a800;
-  color: white;
-  border-radius: 50%;
-  font-size: 55px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 25px;
+width: 100px;
+height: 100px;
+background: #78a800;
+color: white;
+border-radius: 50%;
+font-size: 55px;
+font-weight: bold;
+display: flex;
+align-items: center;
+justify-content: center;
+margin: 0 auto 25px;
 }
 
 .verified-card h2 {
-  font-size: 32px;
-  margin-bottom: 15px;
-  color: #333;
+font-size: 32px;
+margin-bottom: 15px;
+color: #333;
 }
 
 .verified-card p {
-  color: #555;
-  margin-bottom: 10px;
+color: #555;
+margin-bottom: 10px;
 }
 
 .subtitle {
-  margin-bottom: 30px !important;
+margin-bottom: 30px !important;
 }
 
 .btn-login {
-  display: block;
-  width: 100%;
-  padding: 15px;
-  background: #78a800;
-  color: white;
-  text-decoration: none;
-  border-radius: 12px;
-  font-weight: 600;
-  transition: 0.3s;
+display: block;
+width: 100%;
+padding: 15px;
+background: #78a800;
+color: white;
+text-decoration: none;
+border-radius: 12px;
+font-weight: 600;
+transition: 0.3s;
 }
 
 .btn-login:hover {
-  opacity: 0.9;
+opacity: 0.9;
 }
 
 @media (max-width: 768px) {
+.verified-container {
+flex-direction: column;
+}
+
+.left-panel {
+padding: 30px;
+text-align: center;
+}
+
+.brand h1 {
+font-size: 60px;
+}
+
+.brand p {
+font-size: 18px;
+}
+
+.verified-card {
+padding: 35px;
+}
+}
+
+.success-icon.invalid {
+background: #c0392b;
+}
+
+
+@media (max-width: 480px) {
   .verified-container {
     flex-direction: column;
+    padding: 0;
   }
 
   .left-panel {
-    padding: 30px;
+    padding: 20px;
     text-align: center;
   }
 
   .brand h1 {
-    font-size: 60px;
+    font-size: 45px;
+  }
+
+  .line {
+    width: 120px;
+    height: 6px;
+    margin: 15px auto 25px;
   }
 
   .brand p {
-    font-size: 18px;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+
+  .right-panel {
+    padding: 20px;
   }
 
   .verified-card {
-    padding: 35px;
+    max-width: 100%;
+    padding: 25px;
   }
-}
 
-.success-icon.invalid {
-  background: #c0392b;
+  .success-icon {
+    width: 70px;
+    height: 70px;
+    font-size: 40px;
+    margin: 0 auto 15px;
+  }
+
+  .verified-card h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  .verified-card p {
+    font-size: 0.9rem;
+  }
+
+  .btn-login {
+    padding: 12px;
+    font-size: 0.9rem;
+  }
 }
