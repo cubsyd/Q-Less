@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { tap, timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -13,15 +13,15 @@ export class AuthService {
   constructor(private http: HttpClient) { }
 
   register(userData: any): Observable<any> {
-    return this.http.post(`${this.API_URL}/register`, userData);
+    return this.http.post(`${this.API_URL}/register`, userData).pipe(timeout(30000));
   }
 
   login(credentials: any): Observable<any> {
-    return this.http.post(`${this.API_URL}/login`, credentials);
+    return this.http.post(`${this.API_URL}/login`, credentials).pipe(timeout(30000));
   }
 
   resendVerificationEmail(email: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/email/resend`, { email });
+    return this.http.post(`${this.API_URL}/email/resend`, { email }).pipe(timeout(30000));
   }
 
   saveToken(token: string): void {

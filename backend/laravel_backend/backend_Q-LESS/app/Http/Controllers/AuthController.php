@@ -75,6 +75,16 @@ class AuthController extends Controller
 
         $isAdmin = $request->email === $this->adminEmail;
 
+        if (!$isAdmin && !$emailVerificationEnabled) {
+            Log::error('La verificacion de correo no esta habilitada porque faltan columnas en users.');
+
+            return response()->json([
+                'status' => false,
+                'message' => 'No se pudo preparar la verificacion de correo. Intenta de nuevo en unos minutos.',
+                'email_verification_required' => true,
+            ], 503);
+        }
+
         $userData = [
             'name' => $request->name,
             'email' => $request->email,
@@ -91,19 +101,19 @@ class AuthController extends Controller
 
         $user = User::create($userData);
 
-        $emailSent = $isAdmin || !$emailVerificationEnabled || $this->sendVerificationEmail($user);
+        $emailSent = $isAdmin || $this->sendVerificationEmail($user);
 
         return response()->json([
-            'status' => true,
+            'status' => $emailSent,
             'message' => $isAdmin
                 ? 'Usuario administrador registrado correctamente.'
-                : ($emailVerificationEnabled
+                : ($emailSent
                     ? 'Usuario registrado correctamente. Revisa tu correo para verificar la cuenta.'
-                    : 'Usuario registrado correctamente.'),
+                    : 'Usuario registrado, pero no se pudo enviar el correo de verificacion. Usa la opcion de reenviar correo desde el login.'),
             'user' => $user,
             'email_verification_required' => $emailVerificationEnabled && !$isAdmin,
             'email_sent' => $emailSent,
-        ], 201);
+        ], $emailSent ? 201 : 202);
     }
 
     public function login(Request $request)

@@ -225,6 +225,10 @@ export class RegisterComponent {
             )
           );
 
+          if (res?.email_sent === false) {
+            return;
+          }
+
           setTimeout(() => {
             this.router.navigate(['/login'], {
               queryParams: { verification: 'sent', email: payload.email }
@@ -253,6 +257,14 @@ export class RegisterComponent {
           messages.forEach((message) => {
             this.addError('danger', message);
           });
+          return;
+        }
+
+        if (err?.name === 'TimeoutError') {
+          this.addError(
+            'danger',
+            'El servidor tardo demasiado en responder. Intenta de nuevo en unos minutos.'
+          );
           return;
         }
 
