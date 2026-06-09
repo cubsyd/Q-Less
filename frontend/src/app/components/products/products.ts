@@ -6,6 +6,7 @@ import { AuthService } from '../../services/auth.js';
 import { ProductService } from '../../services/product.service.js';
 import { CartService } from '../../services/cart.service.js';
 import { FavoriteService } from '../../services/favorite.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-products',
@@ -160,7 +161,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
     const selectedIndex = this.getSelectedImageIndex(product);
 
-    return images[selectedIndex] || images[0];
+    return this.normalizeImageUrl(images[selectedIndex] || images[0]);
   }
 
   getProductImages(product: any): string[] {
@@ -168,7 +169,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
       return [];
     }
 
-    const images = Array.isArray(product.product_images)
+    const images: string[] = Array.isArray(product.product_images)
       ? product.product_images.filter(Boolean)
       : [];
 
@@ -176,7 +177,35 @@ export class ProductsComponent implements OnInit, OnDestroy {
       images.push(product.image_path);
     }
 
-    return images;
+    return images.map((imagePath) => this.normalizeImageUrl(imagePath));
+  }
+
+  normalizeImageUrl(imagePath: string): string {
+    if (!imagePath || imagePath.startsWith('data:') || imagePath.startsWith('blob:')) {
+      return imagePath;
+    }
+
+    const backendBaseUrl = environment.apiBaseUrl.replace(/\/api\/?$/, '');
+
+    if (imagePath.startsWith('/storage/')) {
+      return `${backendBaseUrl}${imagePath}`;
+    }
+
+    if (imagePath.startsWith('storage/')) {
+      return `${backendBaseUrl}/${imagePath}`;
+    }
+
+    try {
+      const parsedUrl = new URL(imagePath);
+
+      if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
+        return `${backendBaseUrl}${parsedUrl.pathname}`;
+      }
+    } catch {
+      return imagePath;
+    }
+
+    return imagePath;
   }
 
   hasMultipleImages(product: any): boolean {

@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.js';
 import { ProductService } from '../../services/product.service.js';
 import { CartService } from '../../services/cart.service.js';
 import { FavoriteService } from '../../services/favorite.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -140,15 +141,76 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   getImageUrl(product: any): string {
-    if (!product || !product.image_path) {
+    const imagePath = this.getProductImages(product)[0];
+
+    if (!imagePath) {
       return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23f0f0f0" width="200" height="200"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="14">Sin imagen</text></svg>';
     }
 
-    return product.image_path;
+    return this.normalizeImageUrl(imagePath);
+  }
+
+  getProductImages(product: any): string[] {
+    if (!product) {
+      return [];
+    }
+
+    const images: string[] = Array.isArray(product.product_images)
+      ? product.product_images.filter(Boolean)
+      : [];
+
+    if (images.length === 0 && product.image_path) {
+      images.push(product.image_path);
+    }
+
+    return images;
+  }
+
+  normalizeImageUrl(imagePath: string): string {
+    if (!imagePath || imagePath.startsWith('data:') || imagePath.startsWith('blob:')) {
+      return imagePath;
+    }
+
+    const backendBaseUrl = environment.apiBaseUrl.replace(/\/api\/?$/, '');
+
+    if (imagePath.startsWith('/storage/')) {
+      return `${backendBaseUrl}${imagePath}`;
+    }
+
+    if (imagePath.startsWith('storage/')) {
+      return `${backendBaseUrl}/${imagePath}`;
+    }
+
+    try {
+      const parsedUrl = new URL(imagePath);
+
+      if (parsedUrl.hostname === 'localhost' || parsedUrl.hostname === '127.0.0.1') {
+        return `${backendBaseUrl}${parsedUrl.pathname}`;
+      }
+    } catch {
+      return imagePath;
+    }
+
+    return imagePath;
   }
 
   onImageError(event: any): void {
-    console.error('Error cargando imagen:', event.target.src);
+    const currentSrc = event.target?.src || '';
+    const retried = event.target?.dataset?.retried === 'true';
+
+    if (!retried && currentSrc.includes('/storage/productos/')) {
+      event.target.dataset.retried = 'true';
+      event.target.src = currentSrc.replace('/storage/productos/', '/storage/products/');
+      return;
+    }
+
+    if (!retried && currentSrc.includes('/storage/products/')) {
+      event.target.dataset.retried = 'true';
+      event.target.src = currentSrc.replace('/storage/products/', '/storage/productos/');
+      return;
+    }
+
+    console.error('Error cargando imagen:', currentSrc);
     event.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect fill="%23ff6b6b" width="200" height="200"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="Arial" font-size="12" fill="white">Error al cargar</text></svg>';
   }
 
