@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\VerifyEmailMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -38,55 +35,19 @@ class AuthController extends Controller
             'rol.in' => 'Selecciona si eres aprendiz o instructor.',
         ]);
 
-        $emailVerificationEnabled = $this->emailVerificationEnabled();
         $existingUser = User::where('email', $request->email)->first();
 
         if ($existingUser) {
-            if (!$emailVerificationEnabled || $existingUser->email_verified_at) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Este correo ya esta registrado. Inicia sesion con tu cuenta.',
-                    'errors' => [
-                        'email' => ['Este correo ya esta registrado.'],
-                    ],
-                ], 422);
-            }
-
-            if (!$existingUser->email_verification_token) {
-                $existingUser->email_verification_token = Str::random(64);
-            }
-
-            $existingUser->name = $request->name;
-            $existingUser->telefono = $request->telefono;
-            $existingUser->rol = $request->rol;
-            $existingUser->password = Hash::make($request->password);
-            $existingUser->email_verification_sent_at = now();
-            $existingUser->save();
-
-            $emailSent = $this->sendVerificationEmail($existingUser);
-
             return response()->json([
-                'status' => true,
-                'message' => $emailSent
-                    ? 'La cuenta ya existia sin verificar. Te enviamos un nuevo correo de verificacion.'
-                    : 'La cuenta ya existia sin verificar, pero no se pudo enviar el correo de verificacion.',
-                'user' => $existingUser,
-                'email_verification_required' => true,
-                'email_sent' => $emailSent,
-            ]);
+                'status' => false,
+                'message' => 'Este correo ya esta registrado. Inicia sesion con tu cuenta.',
+                'errors' => [
+                    'email' => ['Este correo ya esta registrado.'],
+                ],
+            ], 422);
         }
 
         $isAdmin = $request->email === $this->adminEmail;
-
-        if (!$isAdmin && !$emailVerificationEnabled) {
-            Log::error('La verificacion de correo no esta habilitada porque faltan columnas en users.');
-
-            return response()->json([
-                'status' => false,
-                'message' => 'No se pudo preparar la verificacion de correo. Intenta de nuevo en unos minutos.',
-                'email_verification_required' => true,
-            ], 503);
-        }
 
         $userData = [
             'name' => $request->name,
@@ -96,27 +57,22 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ];
 
-        if ($emailVerificationEnabled) {
-            $userData['email_verified_at'] = $isAdmin ? now() : null;
-            $userData['email_verification_token'] = $isAdmin ? null : Str::random(64);
-            $userData['email_verification_sent_at'] = $isAdmin ? null : now();
+        if ($this->emailVerificationEnabled()) {
+            $userData['email_verified_at'] = now();
+            $userData['email_verification_token'] = null;
+            $userData['email_verification_sent_at'] = null;
         }
 
         $user = User::create($userData);
 
-        $emailSent = $isAdmin || $this->sendVerificationEmail($user);
-
         return response()->json([
-            'status' => $emailSent,
+            'status' => true,
             'message' => $isAdmin
                 ? 'Usuario administrador registrado correctamente.'
-                : ($emailSent
-                    ? 'Usuario registrado correctamente. Revisa tu correo para verificar la cuenta.'
-                    : 'Usuario registrado, pero no se pudo enviar el correo de verificacion. Usa la opcion de reenviar correo desde el login.'),
+                : 'Usuario registrado correctamente. Ya puedes iniciar sesion.',
             'user' => $user,
-            'email_verification_required' => $emailVerificationEnabled && !$isAdmin,
-            'email_sent' => $emailSent,
-        ], $emailSent ? 201 : 202);
+            'email_verification_required' => false,
+        ], 201);
     }
 
     public function login(Request $request)
@@ -161,14 +117,6 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if ($this->emailVerificationEnabled() && $user->email_verification_token && !$user->email_verified_at) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Debes verificar tu correo antes de iniciar sesion. Revisa tu bandeja de entrada.',
-                'email_verification_required' => true,
-            ], 403);
-        }
-
         RateLimiter::clear($key);
 
         $role = $user->email === $this->adminEmail
@@ -199,74 +147,16 @@ class AuthController extends Controller
 
     public function verifyEmail(string $token)
     {
-        $user = User::where('email_verification_token', $token)->first();
-
-        if (!$user) {
-            return redirect($this->frontendUrl('/email-verificado?status=invalid'));
-        }
-
-        $user->email_verified_at = now();
-        $user->email_verification_token = null;
-        $user->save();
-
         return redirect($this->frontendUrl('/email-verificado?status=success'));
     }
 
     public function resendVerificationEmail(Request $request)
     {
-        if (!$this->emailVerificationEnabled()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'La verificacion de correo no esta habilitada en esta base de datos.',
-            ], 422);
-        }
-
-        $request->validate([
-            'email' => 'required|email|exists:users,email',
-        ]);
-
-        $user = User::where('email', $request->email)->firstOrFail();
-
-        if ($user->email_verified_at) {
-            return response()->json([
-                'status' => true,
-                'message' => 'Este correo ya esta verificado.',
-            ]);
-        }
-
-        if (!$user->email_verification_token) {
-            $user->email_verification_token = Str::random(64);
-        }
-
-        $user->email_verification_sent_at = now();
-        $user->save();
-
-        $emailSent = $this->sendVerificationEmail($user);
-
         return response()->json([
-            'status' => $emailSent,
-            'message' => $emailSent
-                ? 'Correo de verificacion reenviado.'
-                : 'No se pudo enviar el correo de verificacion.',
-            'email_sent' => $emailSent,
-        ], $emailSent ? 200 : 500);
-    }
-
-    private function sendVerificationEmail(User $user): bool
-    {
-        try {
-            Mail::to($user->email)->send(new VerifyEmailMail($user));
-
-            return true;
-        } catch (\Throwable $exception) {
-            Log::warning('No se pudo enviar el correo de verificacion.', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'error' => $exception->getMessage(),
-            ]);
-
-            return false;
-        }
+            'status' => true,
+            'message' => 'La verificacion de correo esta desactivada. Ya puedes iniciar sesion.',
+            'email_sent' => false,
+        ]);
     }
 
     private function frontendUrl(string $path): string

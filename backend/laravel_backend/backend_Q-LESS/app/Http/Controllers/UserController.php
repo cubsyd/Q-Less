@@ -44,7 +44,7 @@ class UserController extends Controller
                 'confirmed',
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/',
             ],
-            'photo' => ['nullable', 'image', 'max:2048'],
+            'photo' => ['nullable', 'image', 'max:4096'],
         ], [
             'email.email' => 'El correo no tiene un formato valido.',
             'email.unique' => 'Este correo ya esta registrado.',
@@ -53,7 +53,7 @@ class UserController extends Controller
             'password.confirmed' => 'Las contrasenas no coinciden.',
             'telefono.regex' => 'El telefono solo puede contener numeros, espacios, parentesis, + o -.',
             'photo.image' => 'La foto debe ser una imagen valida.',
-            'photo.max' => 'La foto no puede superar 2 MB.',
+            'photo.max' => 'La foto no puede superar 4 MB.',
         ]);
 
         if ($request->has('name') && trim((string) ($data['name'] ?? '')) !== '') {
@@ -119,11 +119,21 @@ class UserController extends Controller
             'telefono' => $user->telefono,
             'rol' => $user->rol,
             'profile_photo_path' => $user->profile_photo_path,
-            'profile_photo_url' => $user->profile_photo_path
-                ? asset(Storage::url($user->profile_photo_path)) . '?v=' . optional($user->updated_at)->timestamp
-                : null,
+            'profile_photo_url' => $this->profilePhotoUrl($user),
             'created_at' => optional($user->created_at)->toISOString(),
             'updated_at' => optional($user->updated_at)->toISOString(),
         ];
+    }
+
+    private function profilePhotoUrl(User $user): ?string
+    {
+        if (!$user->profile_photo_path) {
+            return null;
+        }
+
+        $backendUrl = rtrim((string) config('services.app_urls.backend_url'), '/');
+        $version = optional($user->updated_at)->timestamp ?: time();
+
+        return $backendUrl . Storage::url($user->profile_photo_path) . '?v=' . $version;
     }
 }
