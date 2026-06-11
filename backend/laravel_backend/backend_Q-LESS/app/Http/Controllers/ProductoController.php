@@ -24,7 +24,10 @@ class ProductoController extends Controller
         }
 
         if (!$categoria && !empty($data['categoria'])) {
-            $categoria = Categoria::where('nombre', $data['categoria'])->first();
+            $categoria = Categoria::firstOrCreate(
+                ['nombre' => $data['categoria']],
+                ['descripcion' => null]
+            );
         }
 
         if ($categoria) {
@@ -43,7 +46,66 @@ class ProductoController extends Controller
         $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
         $file->move($directory, $filename);
 
-        return url('storage/productos/' . $filename);
+        return $this->publicUrl('storage/productos/' . $filename);
+    }
+
+    private function publicUrl(string $path): string
+    {
+        $baseUrl = rtrim((string) config('services.app_urls.backend_url'), '/');
+
+        return $baseUrl . '/' . ltrim($path, '/');
+    }
+
+    private function normalizeImageUrl(?string $imagePath): ?string
+    {
+        if (!$imagePath) {
+            return null;
+        }
+
+        $imagePath = trim($imagePath);
+
+        if (str_starts_with($imagePath, 'data:') || str_starts_with($imagePath, 'blob:')) {
+            return $imagePath;
+        }
+
+        $parts = parse_url($imagePath);
+        $path = $parts['path'] ?? $imagePath;
+        $host = $parts['host'] ?? null;
+
+        if ($host && !in_array($host, ['localhost', '127.0.0.1'], true)) {
+            return $imagePath;
+        }
+
+        $storagePosition = strpos($path, '/storage/');
+        if ($storagePosition !== false) {
+            return $this->publicUrl(substr($path, $storagePosition + 1));
+        }
+
+        if (str_starts_with($path, 'storage/')) {
+            return $this->publicUrl($path);
+        }
+
+        return $imagePath;
+    }
+
+    private function productPayload(Producto $producto): array
+    {
+        $data = $producto->toArray();
+        $images = is_array($producto->product_images) ? $producto->product_images : [];
+
+        if (empty($images) && $producto->image_path) {
+            $images[] = $producto->image_path;
+        }
+
+        $images = array_values(array_filter(array_map(
+            fn ($imagePath) => $this->normalizeImageUrl($imagePath),
+            $images
+        )));
+
+        $data['image_path'] = $this->normalizeImageUrl($producto->image_path) ?: ($images[0] ?? null);
+        $data['product_images'] = $images;
+
+        return $data;
     }
 
     private function storeImage(Request $request): ?string
@@ -107,7 +169,9 @@ class ProductoController extends Controller
         $this->cartReservationService->cleanupExpiredReservations();
 
         return response()->json(
-            Producto::with(['categoriaRelacion', 'usuario'])->get()
+            Producto::with(['categoriaRelacion', 'usuario'])
+                ->get()
+                ->map(fn (Producto $producto) => $this->productPayload($producto))
         );
     }
 
@@ -115,8 +179,8 @@ class ProductoController extends Controller
     {
         $data = $request->validate([
             'nombre' => 'required|string|max:255',
-            'categoria' => 'required_without:categoria_id|string|in:Cuadernos y libretas,Lapices y marcadores,Cartulinas y hojas,Herramientas escolares',
-            'categoria_id' => 'nullable|exists:categorias,id',
+            'categoria' => 'required_without:categoria_id|string|max:255',
+            'categoria_id' => 'nullable|integer',
             'descripcion' => 'nullable|string',
             'precio' => 'required|numeric|min:0',
             'stock' => 'required|integer|min:0',
@@ -137,7 +201,7 @@ class ProductoController extends Controller
 
         $producto = Producto::create($data);
 
-        return response()->json($producto, 201);
+        return response()->json($this->productPayload($producto), 201);
     }
 
     public function show(string $id)
@@ -145,7 +209,7 @@ class ProductoController extends Controller
         $this->cartReservationService->cleanupExpiredReservations();
 
         return response()->json(
-            Producto::with(['categoriaRelacion', 'usuario'])->findOrFail($id)
+            $this->productPayload(Producto::with(['categoriaRelacion', 'usuario'])->findOrFail($id))
         );
     }
 
@@ -155,8 +219,8 @@ class ProductoController extends Controller
 
         $data = $request->validate([
             'nombre' => 'sometimes|required|string|max:255',
-            'categoria' => 'nullable|string|in:Cuadernos y libretas,Lapices y marcadores,Cartulinas y hojas,Herramientas escolares',
-            'categoria_id' => 'nullable|exists:categorias,id',
+            'categoria' => 'nullable|string|max:255',
+            'categoria_id' => 'nullable|integer',
             'descripcion' => 'nullable|string',
             'precio' => 'sometimes|required|numeric|min:0',
             'stock' => 'sometimes|required|integer|min:0',
@@ -181,7 +245,7 @@ class ProductoController extends Controller
 
         $producto->update($data);
 
-        return response()->json($producto);
+        return response()->json($this->productPayload($producto));
     }
 
     public function destroy(string $id)
