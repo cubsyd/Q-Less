@@ -224,13 +224,23 @@ export class RegisterComponent {
 
         if (res?.status === true) {
           this.addError(
-            'success',
-            res?.message || 'Cuenta creada correctamente. Ya puedes iniciar sesion.'
+            res?.email_sent === false ? 'warning' : 'success',
+            res?.message || (
+              res?.email_sent === false
+                ? 'Cuenta creada, pero no se pudo enviar el correo de verificacion. Intenta reenviarlo desde el login.'
+                : 'Cuenta creada. Revisa tu correo y abre el enlace de verificacion antes de iniciar sesion.'
+            )
           );
 
+          if (res?.email_sent === false) {
+            return;
+          }
+
           setTimeout(() => {
-            this.router.navigate(['/login']);
-          }, 1500);
+            this.router.navigate(['/login'], {
+              queryParams: { verification: 'sent', email: payload.email }
+            });
+          }, 3500);
 
         } else if (res?.status === false && res?.message) {
           this.addError('danger', res.message);
