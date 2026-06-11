@@ -21,7 +21,10 @@ class PaymentController extends Controller
             'user_id' => 'required|integer|exists:users,id',
         ]);
 
-        $isSimulatedPayment = (bool) config('services.mercadopago.simulated', true);
+        $isSimulatedPayment = filter_var(
+            config('services.mercadopago.simulated', true),
+            FILTER_VALIDATE_BOOLEAN
+        );
         $accessToken = trim((string) config('services.mercadopago.access_token'));
 
         if (!$isSimulatedPayment && $accessToken === '') {

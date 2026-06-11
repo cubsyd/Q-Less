@@ -17,8 +17,10 @@ class ChatbotRecommendationService
             return $this->buildInstructionNeededResponse($message);
         }
 
-        $provider = (string) config('services.openai.provider', 'local');
         $apiKey = trim((string) config('services.openai.api_key'));
+        $provider = $apiKey !== ''
+            ? 'openai'
+            : (string) config('services.openai.provider', 'local');
 
         if ($provider !== 'openai' || $apiKey === '') {
             return $this->recommendLocally($message);

@@ -36,10 +36,15 @@ return [
     ],
 
     'openai' => [
-        'provider' => env('CHATBOT_PROVIDER', 'local'),
+        'provider' => env('CHATBOT_PROVIDER', env('OPENAI_API_KEY') ? 'openai' : 'local'),
         'api_key' => env('OPENAI_API_KEY'),
         'model' => env('OPENAI_MODEL', 'gpt-5-mini'),
         'timeout' => env('OPENAI_TIMEOUT', 25),
+    ],
+
+    'app_urls' => [
+        'backend_url' => env('BACKEND_URL', env('APP_URL', 'http://localhost:8000')),
+        'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
     ],
 
     'mercadopago' => [
@@ -47,7 +52,7 @@ return [
         'currency' => env('MERCADOPAGO_CURRENCY', 'COP'),
         'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
         'notification_url' => env('MERCADOPAGO_NOTIFICATION_URL'),
-        'simulated' => env('MERCADOPAGO_SIMULATED', true),
+        'simulated' => env('MERCADOPAGO_SIMULATED', env('MERCADOPAGO_ACCESS_TOKEN') ? false : true),
     ],
 
 ];
