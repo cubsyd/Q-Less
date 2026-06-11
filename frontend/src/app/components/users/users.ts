@@ -87,7 +87,42 @@ export class UsersComponent implements OnInit, OnDestroy {
     return `${user.profile_photo_url}${separator}panel_v=${version}`;
   }
 
+  getInitials(user: any): string {
+    const name = String(user?.name || user?.email || 'U').trim();
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || 'U';
+  }
+
+  getRoleLabel(user: any): string {
+    return user?.rol === 'admin' ? 'Administrador' : 'Usuario';
+  }
+
+  formatDate(value: string | null | undefined): string {
+    if (!value) {
+      return 'No disponible';
+    }
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return 'No disponible';
+    }
+
+    return date.toLocaleDateString('es-CO', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit'
+    });
+  }
+
   deleteUser(user: any): void {
+    if (user?.rol === 'admin') {
+      this.message = 'No se puede eliminar una cuenta administradora.';
+      return;
+    }
+
     if (!confirm('Eliminar usuario "' + user.name + '"?')) {
       return;
     }

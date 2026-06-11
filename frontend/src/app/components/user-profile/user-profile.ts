@@ -68,7 +68,17 @@ export class UserProfileComponent implements OnInit {
 
     this.selectedPhoto = file;
     this.previewUrl = URL.createObjectURL(file);
-    this.save();
+    this.message = 'Foto seleccionada. Guarda los cambios para actualizar tu usuario.';
+    this.cdr.detectChanges();
+  }
+
+  getInitials(): string {
+    const name = String(this.user?.name || this.user?.email || 'U').trim();
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || 'U';
   }
 
   save(): void {

@@ -38,15 +38,28 @@
         {{ message }}
       </p>
 
-      <div class="orders-list" *ngIf="!isLoading || users.length > 0">
+      <div class="orders-list users-list" *ngIf="!isLoading || users.length > 0">
 
-        <div class="order-card" *ngFor="let user of users">
+        <div class="order-card user-card" *ngFor="let user of users">
 
-          <div class="order-info">
+          <div class="user-main">
+
+            <div class="user-avatar" [class.empty-avatar]="!getUserPhotoUrl(user)">
+              <img *ngIf="getUserPhotoUrl(user) as photoUrl" [src]="photoUrl" alt="Foto de perfil de {{ user.name }}" />
+              <span *ngIf="!getUserPhotoUrl(user)">{{ getInitials(user) }}</span>
+            </div>
+
+            <div class="order-info user-info">
 
             <h3>
               {{ user.name }}
+              <span class="role-pill" [class.admin-role]="user.rol === 'admin'">{{ getRoleLabel(user) }}</span>
             </h3>
+
+            <p>
+              <strong>ID:</strong>
+              #{{ user.id }}
+            </p>
 
             <p>
               <strong>Email:</strong>
@@ -55,22 +68,27 @@
 
             <p>
               <strong>Telefono:</strong>
-              {{ user.telefono }}
+              {{ user.telefono || 'Sin telefono' }}
             </p>
 
             <p>
-              <strong>Rol:</strong>
-              {{ user.rol }}
+              <strong>Fecha de registro:</strong>
+              {{ formatDate(user.created_at) }}
             </p>
 
-            <div class="user-photo" *ngIf="getUserPhotoUrl(user) as photoUrl">
-              <img [src]="photoUrl" alt="Foto de perfil de {{ user.name }}" />
+            <p>
+              <strong>Ultima actualizacion:</strong>
+              {{ formatDate(user.updated_at) }}
+            </p>
+
             </div>
 
           </div>
 
           <div class="order-actions">
-            <button class="btn-danger" (click)="deleteUser(user)" [disabled]="deleting.has(user.id)">Eliminar</button>
+            <button class="btn-danger" (click)="deleteUser(user)" [disabled]="deleting.has(user.id) || user.rol === 'admin'">
+              {{ deleting.has(user.id) ? 'Eliminando...' : 'Eliminar' }}
+            </button>
           </div>
 
         </div>

@@ -8,7 +8,9 @@
       <a routerLink="/productos">Productos</a>
       <a *ngIf="!isAdmin" routerLink="/chatbot">ChatBot</a>
       <a *ngIf="!isAdmin" routerLink="/mis-pedidos">Mis pedidos</a>
+      <a *ngIf="!isAdmin" routerLink="/mi-perfil">Mi usuario</a>
       <a *ngIf="isAdmin" routerLink="/pedidos">Pedidos</a>
+      <a *ngIf="isAdmin" routerLink="/usuarios">Usuarios</a>
     </nav>
     <div class="top-actions">
       <input type="search" placeholder="Buscar..." [(ngModel)]="searchText" (ngModelChange)="applyFilters()" />

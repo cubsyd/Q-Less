@@ -29,6 +29,8 @@
   overflow: hidden;
   border: 4px solid #d7e5c4;
   background: #eef7e4;
+  display: grid;
+  place-items: center;
 }
 
 .avatar-preview img {
@@ -36,6 +38,12 @@
   height: 100%;
   object-fit: cover;
   display: block;
+}
+
+.avatar-preview span {
+  color: #2c7a09;
+  font-size: 2rem;
+  font-weight: 800;
 }
 
 .photo-button {
@@ -64,6 +72,11 @@
   word-break: break-word;
   color: #6b6b6b;
   font-size: 0.9rem;
+}
+
+.profile-meta small {
+  color: #6b6b6b;
+  font-weight: 600;
 }
 
 .form-grid {

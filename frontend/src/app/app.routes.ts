@@ -26,7 +26,7 @@ export const routes: Routes = [
   { path: 'carrito', component: CartComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-pedidos', component: MyOrdersComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-conversaciones', component: ChatConversationsComponent, canActivate: [AuthGuard], data: { userOnly: true } },
-  { path: 'mis-perfil', component: UserProfileComponent, canActivate: [AuthGuard], data: { userOnly: true } },
+  { path: 'mi-perfil', component: UserProfileComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'pedidos', component: OrdersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
   { path: 'usuarios', component: UsersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
 

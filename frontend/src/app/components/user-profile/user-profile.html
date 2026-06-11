@@ -11,7 +11,7 @@
       <a routerLink="/productos">Productos</a>
       <a routerLink="/chatbot">ChatBot</a>
       <a routerLink="/mis-pedidos">Mis pedidos</a>
-      <a routerLink="/mi-perfil" class="active-link">Mi perfil</a>
+      <a routerLink="/mi-perfil" class="active-link">Mi usuario</a>
     </nav>
 
     <div class="top-actions">
@@ -26,8 +26,8 @@
 
       <div class="section-head">
         <div>
-          <h2>Mi perfil</h2>
-          <p>Actualiza tu informacion, foto de perfil y contrasena.</p>
+          <h2>Mi usuario</h2>
+          <p>Consulta y modifica tu informacion, foto y contrasena.</p>
         </div>
       </div>
 
@@ -35,8 +35,9 @@
 
       <div class="profile-layout" *ngIf="!isLoading; else loadingProfile">
         <aside class="profile-summary">
-          <div class="avatar-preview" *ngIf="previewUrl">
-            <img [src]="previewUrl" alt="Foto de perfil" />
+          <div class="avatar-preview" [class.empty-avatar]="!previewUrl">
+            <img *ngIf="previewUrl" [src]="previewUrl" alt="Foto de perfil" />
+            <span *ngIf="!previewUrl">{{ getInitials() }}</span>
           </div>
 
           <label class="photo-button">
@@ -47,6 +48,7 @@
           <div class="profile-meta">
             <strong>{{ user.name }}</strong>
             <span>{{ user.email }}</span>
+            <small>{{ user.telefono || 'Sin telefono registrado' }}</small>
           </div>
         </aside>
 
