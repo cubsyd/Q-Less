@@ -9,14 +9,13 @@
     <nav class="main-nav">
       <a routerLink="/home">Inicio</a>
       <a routerLink="/productos">Productos</a>
+      <a routerLink="/chatbot">ChatBot</a>
       <a routerLink="/mis-pedidos">Mis pedidos</a>
       <a routerLink="/mi-perfil" class="active-link">Mi perfil</a>
     </nav>
 
     <div class="top-actions">
-      <button class="btn-logout" (click)="logout()">
-        Cerrar Sesion
-      </button>
+      <button class="btn-logout" (click)="logout()">Cerrar Sesion</button>
     </div>
 
   </header>
@@ -28,38 +27,90 @@
       <div class="section-head">
         <div>
           <h2>Mi perfil</h2>
-          <p>
-            Aquí puedes actualizar tu información y foto de perfil.
-          </p>
+          <p>Actualiza tu informacion, foto de perfil y contrasena.</p>
         </div>
       </div>
 
       <p class="orders-message" *ngIf="message">{{ message }}</p>
 
-      <div class="profile-form">
-        <label>Nombre</label>
-        <input type="text" [(ngModel)]="user.name" />
+      <div class="profile-layout" *ngIf="!isLoading; else loadingProfile">
+        <aside class="profile-summary">
+          <div class="avatar-preview" *ngIf="previewUrl">
+            <img [src]="previewUrl" alt="Foto de perfil" />
+          </div>
 
-        <label>Email</label>
-        <input type="email" [(ngModel)]="user.email" />
+          <label class="photo-button">
+            Cambiar foto
+            <input type="file" accept="image/*" (change)="onFileChange($event)" />
+          </label>
 
-        <label>Telefono</label>
-        <input type="text" [(ngModel)]="user.telefono" />
+          <div class="profile-meta">
+            <strong>{{ user.name }}</strong>
+            <span>{{ user.email }}</span>
+          </div>
+        </aside>
 
-        <div *ngIf="user.profile_photo_url">
-          <img [src]="user.profile_photo_url" alt="foto" style="max-width:120px;border-radius:8px;" />
-        </div>
+        <form class="profile-form" (ngSubmit)="save()">
+          <div class="form-grid">
+            <label>
+              Nombre
+              <input type="text" [(ngModel)]="user.name" name="name" />
+            </label>
 
-        <label>Subir foto</label>
-        <input type="file" (change)="onFileChange($event)" />
+            <label>
+              Email
+              <input type="email" [(ngModel)]="user.email" name="email" />
+            </label>
 
-        <div style="margin-top:12px;">
-          <button class="btn-success" (click)="save()">Guardar</button>
-        </div>
+            <label>
+              Telefono
+              <input type="text" [(ngModel)]="user.telefono" name="telefono" />
+            </label>
+
+            <label>
+              Nueva contrasena
+              <input type="password" [(ngModel)]="passwordData.password" name="password" autocomplete="new-password" />
+            </label>
+
+            <label>
+              Confirmar contrasena
+              <input type="password" [(ngModel)]="passwordData.password_confirmation" name="password_confirmation" autocomplete="new-password" />
+            </label>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-success" type="submit" [disabled]="isSaving">
+              {{ isSaving ? 'Guardando...' : 'Guardar cambios' }}
+            </button>
+            <button class="btn-danger" type="button" (click)="openDeleteConfirm()" [disabled]="isSaving || isDeleting">
+              Eliminar perfil
+            </button>
+          </div>
+        </form>
       </div>
+
+      <ng-template #loadingProfile>
+        <p class="orders-message">Cargando perfil...</p>
+      </ng-template>
 
     </section>
 
   </main>
+
+  <div class="confirm-overlay" *ngIf="showDeleteConfirm">
+    <section class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteProfileTitle">
+      <h3 id="deleteProfileTitle">Eliminar perfil</h3>
+      <p>Estas seguro de borrar tu cuenta? Esta accion eliminara tu perfil y no se puede deshacer.</p>
+
+      <div class="confirm-actions">
+        <button type="button" class="btn-secondary" (click)="closeDeleteConfirm()" [disabled]="isDeleting">
+          Cancelar
+        </button>
+        <button type="button" class="btn-danger" (click)="deleteProfile()" [disabled]="isDeleting">
+          {{ isDeleting ? 'Eliminando...' : 'Si, borrar cuenta' }}
+        </button>
+      </div>
+    </section>
+  </div>
 
 </div>

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth';
 
 export interface CartItem {
   id: number;
@@ -47,7 +48,10 @@ export class CartService {
   private readonly countdownIntervalId: number;
   private isRefreshingExpiredReservations = false;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) {
     this.countdownIntervalId = window.setInterval(() => {
       this.tickReservationCountdown();
     }, 1000);
@@ -237,7 +241,7 @@ export class CartService {
   }
 
   private getCurrentUserId(): number | null {
-    const userId = localStorage.getItem('user_id');
+    const userId = this.authService.getUserId();
     return userId ? Number(userId) : null;
   }
 }

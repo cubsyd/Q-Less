@@ -17,6 +17,8 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./home.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  readonly mobileAppDownloadUrl = 'https://github.com/AnderFelipeOrtiz2004/Q-Less/releases/download/v0.2.7-mobile/Q-LESS-v0.2.7-release.apk';
+
   readonly categories = [
     'Todos',
     'Favoritos',
@@ -49,9 +51,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.userName = localStorage.getItem('user_name') || 'Aprendiz';
+    this.userName = this.authService.getUserName('Aprendiz');
 
-    const userIdValue = localStorage.getItem('user_id');
+    const userIdValue = this.authService.getUserId();
     this.loggedUserId = userIdValue ? Number(userIdValue) : null;
 
     if (!this.isAdmin) {
@@ -334,7 +336,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private getCurrentUserId(): number | null {
-    const userId = localStorage.getItem('user_id');
+    const userId = this.authService.getUserId();
     return userId ? Number(userId) : null;
   }
 }

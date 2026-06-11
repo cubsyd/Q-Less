@@ -190,7 +190,7 @@ export class CreateProduct implements OnInit {
     this.isLoading = true;
     this.clearErrors();
 
-    const userId = localStorage.getItem("user_id");
+    const userId = this.authService.getUserId();
     const formData = new FormData();
     formData.append("nombre", this.name);
     formData.append("categoria", this.category);

@@ -17,6 +17,7 @@ export class RegisterComponent {
     name: '',
     email: '',
     telefono: '',
+    rol: 'aprendiz',
     password: '',
     password_confirmation: ''
   };
@@ -125,6 +126,11 @@ export class RegisterComponent {
       isValid = false;
     }
 
+    if (!['aprendiz', 'instructor'].includes(this.user.rol)) {
+      this.addError('danger', 'Selecciona si eres aprendiz o instructor');
+      isValid = false;
+    }
+
     const password = this.user.password;
 
     if (password.length < 8) {
@@ -205,6 +211,7 @@ export class RegisterComponent {
       name: this.user.name.trim(),
       email: this.user.email.trim().toLowerCase(),
       telefono: this.user.telefono.trim(),
+      rol: this.user.rol,
       password: this.user.password,
       password_confirmation: this.user.password_confirmation
     };

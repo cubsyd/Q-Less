@@ -25,19 +25,52 @@ export class AuthService {
   }
 
   saveToken(token: string): void {
-    localStorage.setItem('auth_token', token);
+    sessionStorage.setItem('auth_token', token);
+    localStorage.removeItem('auth_token');
   }
 
   saveUserRole(role: string): void {
-    localStorage.setItem('user_role', role);
+    sessionStorage.setItem('user_role', role);
+    localStorage.removeItem('user_role');
   }
 
   getToken(): string | null {
-    return localStorage.getItem('auth_token');
+    localStorage.removeItem('auth_token');
+    return sessionStorage.getItem('auth_token');
   }
 
   getUserRole(): string {
-    return localStorage.getItem('user_role') || 'usuario';
+    localStorage.removeItem('user_role');
+    return sessionStorage.getItem('user_role') || 'usuario';
+  }
+
+  getUserId(): string | null {
+    localStorage.removeItem('user_id');
+    return sessionStorage.getItem('user_id');
+  }
+
+  saveUserSession(user: any, role: string): void {
+    if (user?.name) {
+      sessionStorage.setItem('user_name', user.name);
+    }
+
+    if (user?.id) {
+      sessionStorage.setItem('user_id', String(user.id));
+    }
+
+    this.saveUserRole(role);
+    localStorage.removeItem('user_name');
+    localStorage.removeItem('user_id');
+  }
+
+  getUserName(defaultName = 'Aprendiz'): string {
+    localStorage.removeItem('user_name');
+    return sessionStorage.getItem('user_name') || defaultName;
+  }
+
+  saveUserName(name: string): void {
+    sessionStorage.setItem('user_name', name);
+    localStorage.removeItem('user_name');
   }
 
   isAdmin(): boolean {
@@ -45,6 +78,10 @@ export class AuthService {
   }
 
   clearSession(): void {
+    sessionStorage.removeItem('auth_token');
+    sessionStorage.removeItem('user_name');
+    sessionStorage.removeItem('user_id');
+    sessionStorage.removeItem('user_role');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_id');

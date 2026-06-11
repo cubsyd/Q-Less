@@ -3,20 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.js';
-import { ChatbotResponse, ChatbotService } from '../../services/chatbot.service';
-
-interface ConversationMessage {
-  role: 'user' | 'bot';
-  text?: string;
-  reply?: ChatbotResponse;
-}
-
-interface SavedConversation {
-  id: string;
-  title: string;
-  updatedAt: string;
-  messages: ConversationMessage[];
-}
+import { ChatbotResponse, ChatbotService, ConversationMessage } from '../../services/chatbot.service';
 
 @Component({
   selector: 'app-chatbot',
@@ -33,7 +20,7 @@ export class ChatbotComponent implements OnInit {
 
   prompt = '';
   isLoading = false;
-  currentConversationId: string | null = null;
+  currentConversationId: number | null = null;
   conversations: ConversationMessage[] = [{ ...this.welcomeMessage }];
 
   constructor(
@@ -45,11 +32,11 @@ export class ChatbotComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) { }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     const conversationId = this.route.snapshot.queryParamMap.get('conversationId');
 
     if (conversationId) {
-      this.loadConversation(conversationId);
+      await this.loadConversation(Number(conversationId));
     }
   }
 
@@ -64,14 +51,14 @@ export class ChatbotComponent implements OnInit {
     this.isLoading = true;
 
     try {
-      const response = await this.chatbotService.recommend(text);
+      const response = await this.chatbotService.recommend(text, this.getCurrentUserId(), this.currentConversationId);
 
       this.ngZone.run(() => {
+        this.currentConversationId = response.conversation_id ?? this.currentConversationId;
         this.conversations.push({
           role: 'bot',
           reply: response
         });
-        this.saveCurrentConversation(text);
         this.isLoading = false;
         this.cdr.detectChanges();
       });
@@ -88,7 +75,6 @@ export class ChatbotComponent implements OnInit {
           role: 'bot',
           text: `${backendMessage} Verifica que el backend este corriendo e intenta de nuevo.`
         });
-        this.saveCurrentConversation(text);
         this.isLoading = false;
         this.cdr.detectChanges();
       });
@@ -121,63 +107,33 @@ export class ChatbotComponent implements OnInit {
     });
   }
 
-  private loadConversation(conversationId: string): void {
-    const conversation = this.getSavedConversations()
-      .find((item) => item.id === conversationId);
-
-    if (!conversation) {
+  private async loadConversation(conversationId: number): Promise<void> {
+    if (!Number.isFinite(conversationId)) {
       return;
     }
 
-    this.currentConversationId = conversation.id;
-    this.conversations = conversation.messages?.length
-      ? conversation.messages
-      : [{ ...this.welcomeMessage }];
-  }
-
-  private saveCurrentConversation(firstUserText: string): void {
-    const savedConversations = this.getSavedConversations();
-    const conversationId = this.currentConversationId || this.createConversationId();
-    const existingIndex = savedConversations.findIndex((item) => item.id === conversationId);
-    const title = this.buildConversationTitle(firstUserText);
-    const conversation: SavedConversation = {
-      id: conversationId,
-      title: existingIndex >= 0 ? savedConversations[existingIndex].title : title,
-      updatedAt: new Date().toISOString(),
-      messages: this.conversations,
-    };
-
-    if (existingIndex >= 0) {
-      savedConversations[existingIndex] = conversation;
-    } else {
-      savedConversations.unshift(conversation);
-    }
-
-    this.currentConversationId = conversationId;
-    localStorage.setItem(this.storageKey(), JSON.stringify(savedConversations.slice(0, 30)));
-  }
-
-  private getSavedConversations(): SavedConversation[] {
     try {
-      const rawValue = localStorage.getItem(this.storageKey());
-      const parsed = rawValue ? JSON.parse(rawValue) : [];
+      const conversation = await this.chatbotService.getConversation(this.getCurrentUserId(), conversationId);
 
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
+      this.ngZone.run(() => {
+        this.currentConversationId = conversation?.id ?? null;
+        this.conversations = conversation?.messages?.length
+          ? conversation.messages
+          : [{ ...this.welcomeMessage }];
+        this.cdr.detectChanges();
+      });
+    } catch (error) {
+      console.error('Error cargando conversacion', error);
     }
   }
 
-  private storageKey(): string {
-    const userId = localStorage.getItem('user_id') || 'anonimo';
-    return `qless_chat_conversations_${userId}`;
-  }
+  private getCurrentUserId(): number {
+    const userId = Number(this.authService.getUserId());
 
-  private createConversationId(): string {
-    return `chat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  }
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw new Error('No se encontro el usuario actual.');
+    }
 
-  private buildConversationTitle(text: string): string {
-    return text.length > 44 ? `${text.slice(0, 44)}...` : text;
+    return userId;
   }
 }

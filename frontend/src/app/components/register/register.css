@@ -92,12 +92,34 @@
   margin-right: 12px;
 }
 
-.input-group input {
+.input-group input,
+.input-group select {
   border: none;
   background: transparent;
   outline: none;
   width: 100%;
   font-size: 1rem;
+  color: #333;
+}
+
+.input-group select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.select-group {
+  position: relative;
+}
+
+.select-group::after {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-right: 2px solid #7AB500;
+  border-bottom: 2px solid #7AB500;
+  transform: rotate(45deg);
+  pointer-events: none;
 }
 
 

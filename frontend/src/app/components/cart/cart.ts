@@ -262,7 +262,7 @@ export class CartComponent implements OnInit, OnDestroy {
   }
 
   private markPaymentApproved(externalReference: string | null): void {
-    const userId = localStorage.getItem('user_id');
+    const userId = this.authService.getUserId();
 
     if (!userId || !externalReference) {
       return;

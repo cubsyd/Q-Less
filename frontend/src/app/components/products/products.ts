@@ -49,7 +49,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.userName = localStorage.getItem('user_name') || 'Aprendiz';
+    this.userName = this.authService.getUserName('Aprendiz');
 
     if (!this.isAdmin) {
       this.cartService.syncCurrentUser();
@@ -403,7 +403,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   }
 
   private getCurrentUserId(): number | null {
-    const userId = localStorage.getItem('user_id');
+    const userId = this.authService.getUserId();
     return userId ? Number(userId) : null;
   }
 }

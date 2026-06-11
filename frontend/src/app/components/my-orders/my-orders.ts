@@ -28,7 +28,7 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    this.userName = localStorage.getItem('user_name') || 'Aprendiz';
+    this.userName = this.authService.getUserName('Aprendiz');
 
     if (this.authService.isAdmin()) {
       this.router.navigate(['/productos']);
@@ -45,7 +45,7 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
   }
 
   obtenerMisPedidos(retryCount = 0): void {
-    const userId = localStorage.getItem('user_id');
+    const userId = this.authService.getUserId();
 
     if (!userId) {
       this.router.navigate(['/login']);

@@ -103,14 +103,7 @@ export class LoginComponent {
       next: (res: any) => {
         this.isLoading = false;
         if (res?.status === true && res?.token) {
-          if (res?.user?.name) {
-            localStorage.setItem('user_name', res.user.name);
-          }
-          if (res?.user?.id) {
-            localStorage.setItem('user_id', String(res.user.id));
-          }
-
-          this.authService.saveUserRole(res?.role || res?.user?.rol || 'usuario');
+          this.authService.saveUserSession(res.user, res?.role || res?.user?.rol || 'usuario');
           this.authService.saveToken(res.token);
           this.addError('success', 'Bienvenido! Iniciando sesion...');
           setTimeout(() => {

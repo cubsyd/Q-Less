@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
@@ -12,12 +12,13 @@ import { environment } from '../../../environments/environment';
   templateUrl: './users.html',
   styleUrls: ['./users.css']
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, OnDestroy {
 
   users: any[] = [];
   isLoading = false;
   message = '';
   deleting = new Set<number>();
+  private usersRefreshIntervalId: number | null = null;
   private readonly usersUrl = `${environment.apiBaseUrl}/users`;
 
   constructor(
@@ -34,30 +35,56 @@ export class UsersComponent implements OnInit {
     }
 
     this.loadUsers();
+    this.usersRefreshIntervalId = window.setInterval(() => {
+      this.loadUsers(0, true);
+    }, 5000);
   }
 
-  loadUsers(retry = 0): void {
+  ngOnDestroy(): void {
+    if (this.usersRefreshIntervalId !== null) {
+      window.clearInterval(this.usersRefreshIntervalId);
+    }
+  }
+
+  loadUsers(retry = 0, silent = false): void {
     this.isLoading = true;
-    this.message = 'Cargando usuarios...';
+    if (!silent) {
+      this.message = 'Cargando usuarios...';
+    }
 
     this.http.get<any>(this.usersUrl).subscribe({
       next: (res) => {
         this.users = res.users || [];
         this.isLoading = false;
-        this.message = this.users.length ? '' : 'No hay usuarios.';
+        if (!silent || !this.users.length) {
+          this.message = this.users.length ? '' : 'No hay usuarios.';
+        }
         this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error cargando usuarios', err);
         if (retry < 3) {
-          setTimeout(() => this.loadUsers(retry + 1), 800);
+          setTimeout(() => this.loadUsers(retry + 1, silent), 800);
           return;
         }
         this.isLoading = false;
-        this.message = 'No se pudieron cargar los usuarios.';
+        if (!silent) {
+          this.message = 'No se pudieron cargar los usuarios.';
+        }
         this.cdr.detectChanges();
       }
     });
+  }
+
+  getUserPhotoUrl(user: any): string | null {
+    if (!user?.profile_photo_url) {
+      return null;
+    }
+
+    const separator = String(user.profile_photo_url).includes('?') ? '&' : '?';
+    const version = encodeURIComponent(user.updated_at || Date.now());
+
+    return `${user.profile_photo_url}${separator}panel_v=${version}`;
   }
 
   deleteUser(user: any): void {
@@ -66,17 +93,19 @@ export class UsersComponent implements OnInit {
     }
 
     this.deleting.add(user.id);
-    this.users = this.users.filter(u => u.id !== user.id);
     this.cdr.detectChanges();
 
     this.http.delete(`${this.usersUrl}/${user.id}`).subscribe({
-      next: () => {
+      next: (res: any) => {
+        this.users = this.users.filter(u => u.id !== user.id);
         this.deleting.delete(user.id);
+        this.message = res?.message || 'Usuario eliminado correctamente.';
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error eliminando usuario', err);
         this.deleting.delete(user.id);
-        this.message = 'El usuario fue removido de la lista localmente pero no del servidor.';
+        this.message = err?.error?.message || 'No se pudo eliminar el usuario.';
         this.cdr.detectChanges();
       }
     });

@@ -2,13 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.js';
-
-interface SavedConversation {
-  id: string;
-  title: string;
-  updatedAt: string;
-  messages: any[];
-}
+import { ChatbotService, SavedConversation } from '../../services/chatbot.service';
 
 @Component({
   selector: 'app-chat-conversations',
@@ -23,6 +17,7 @@ export class ChatConversationsComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
+    private chatbotService: ChatbotService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) {}
@@ -36,12 +31,18 @@ export class ChatConversationsComponent implements OnInit {
     this.loadConversations();
   }
 
-  loadConversations(): void {
-    this.conversations = this.getSavedConversations();
-    this.message = this.conversations.length
-      ? ''
-      : 'Aun no tienes conversaciones guardadas con la IA.';
-    this.cdr.detectChanges();
+  async loadConversations(): Promise<void> {
+    try {
+      this.conversations = await this.chatbotService.getConversations(this.getCurrentUserId());
+      this.message = this.conversations.length
+        ? ''
+        : 'Aun no tienes conversaciones guardadas con la IA.';
+    } catch (error) {
+      console.error('Error cargando conversaciones', error);
+      this.message = 'No pude cargar tus conversaciones en este momento.';
+    } finally {
+      this.cdr.detectChanges();
+    }
   }
 
   openConversation(conversation: SavedConversation): void {
@@ -52,18 +53,25 @@ export class ChatConversationsComponent implements OnInit {
     });
   }
 
-  deleteConversation(conversation: SavedConversation, event: Event): void {
+  async deleteConversation(conversation: SavedConversation, event: Event): Promise<void> {
     event.stopPropagation();
 
-    const conversations = this.getSavedConversations()
-      .filter((item) => item.id !== conversation.id);
-
-    localStorage.setItem(this.storageKey(), JSON.stringify(conversations));
-    this.loadConversations();
+    try {
+      await this.chatbotService.deleteConversation(this.getCurrentUserId(), conversation.id);
+      await this.loadConversations();
+    } catch (error) {
+      console.error('Error eliminando conversacion', error);
+      this.message = 'No pude eliminar la conversacion. Intenta de nuevo.';
+      this.cdr.detectChanges();
+    }
   }
 
   getPreview(conversation: SavedConversation): string {
-    const lastMessage = [...(conversation.messages || [])]
+    if (conversation.preview) {
+      return conversation.preview;
+    }
+
+    const lastMessage = [...(conversation.messages ?? [])]
       .reverse()
       .find((message) => message.text || message.reply?.summary);
 
@@ -93,19 +101,13 @@ export class ChatConversationsComponent implements OnInit {
   });
 }
 
-  private getSavedConversations(): SavedConversation[] {
-    try {
-      const rawValue = localStorage.getItem(this.storageKey());
-      const parsed = rawValue ? JSON.parse(rawValue) : [];
+  private getCurrentUserId(): number {
+    const userId = Number(this.authService.getUserId());
 
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
+    if (!Number.isFinite(userId) || userId <= 0) {
+      throw new Error('No se encontro el usuario actual.');
     }
-  }
 
-  private storageKey(): string {
-    const userId = localStorage.getItem('user_id') || 'anonimo';
-    return `qless_chat_conversations_${userId}`;
+    return userId;
   }
 }

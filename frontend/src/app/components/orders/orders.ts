@@ -33,8 +33,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
 
-    this.userName =
-      localStorage.getItem('user_name') || 'Administrador';
+    this.userName = this.authService.getUserName('Administrador');
 
     if (!this.authService.isAdmin()) {
       this.router.navigate(['/home']);

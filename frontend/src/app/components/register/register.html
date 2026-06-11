@@ -37,6 +37,14 @@
           <input type="text" [(ngModel)]="user.telefono" name="telefono" placeholder="Telefono" required>
         </div>
 
+        <div class="input-group select-group">
+          <i class="bi bi-person-badge"></i>
+          <select [(ngModel)]="user.rol" name="rol" required>
+            <option value="aprendiz">Aprendiz</option>
+            <option value="instructor">Instructor</option>
+          </select>
+        </div>
+
         <div class="input-group">
           <i class="bi bi-lock"></i>
           <input type="password" [(ngModel)]="user.password" name="password" placeholder="Contrasena" required>

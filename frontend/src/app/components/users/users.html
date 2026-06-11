@@ -63,8 +63,8 @@
               {{ user.rol }}
             </p>
 
-            <div *ngIf="user.profile_photo_url">
-              <img [src]="user.profile_photo_url" alt="foto" style="max-width:80px; border-radius:8px;" />
+            <div class="user-photo" *ngIf="getUserPhotoUrl(user) as photoUrl">
+              <img [src]="photoUrl" alt="Foto de perfil de {{ user.name }}" />
             </div>
 
           </div>
