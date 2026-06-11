@@ -20,6 +20,7 @@ export class CartComponent implements OnInit, OnDestroy {
   selectedImageIndexes: Record<number, number> = {};
   private countdownIntervalId: number | null = null;
   private cartRefreshIntervalId: number | null = null;
+  private paymentWindowCheckIntervalId: number | null = null;
 
   constructor(
     private authService: AuthService,
@@ -66,6 +67,10 @@ export class CartComponent implements OnInit, OnDestroy {
 
     if (this.cartRefreshIntervalId !== null) {
       window.clearInterval(this.cartRefreshIntervalId);
+    }
+
+    if (this.paymentWindowCheckIntervalId !== null) {
+      window.clearInterval(this.paymentWindowCheckIntervalId);
     }
   }
 
@@ -218,20 +223,15 @@ export class CartComponent implements OnInit, OnDestroy {
           ? 'Tambien enviamos el correo a la cuenta asociada.'
           : 'El pedido fue creado; revisa la configuracion SMTP si no llega el correo.';
 
-        this.cartMessage = orderNumber
-          ? `Pedido creado correctamente con el numero de pedido #${orderNumber}. ${emailText}`
-          : `Pedido creado correctamente. ${emailText}`;
-
-        window.alert(this.cartMessage);
-        this.cartService.syncCurrentUser();
-
         if (paymentWindow) {
           paymentWindow.location.href = paymentUrl;
+          this.cartMessage = 'Mercado Pago esta abierto. Completa el pago y cierra esa ventana para ver tu numero de pedido.';
+          this.watchPaymentWindowClose(paymentWindow, orderNumber, emailText);
         } else {
+          this.cartMessage = 'Mercado Pago se abrira en esta pestana. Al volver al carrito veras el estado del pago.';
           window.location.href = paymentUrl;
+          this.isRedirectingToPayment = false;
         }
-
-        this.isRedirectingToPayment = false;
       },
 
       error: (error) => {
@@ -255,6 +255,31 @@ export class CartComponent implements OnInit, OnDestroy {
           || 'No se pudo abrir Mercado Pago en este momento.';
       }
     });
+  }
+
+  private watchPaymentWindowClose(paymentWindow: Window, orderNumber: string | null, emailText: string): void {
+    if (this.paymentWindowCheckIntervalId !== null) {
+      window.clearInterval(this.paymentWindowCheckIntervalId);
+    }
+
+    this.paymentWindowCheckIntervalId = window.setInterval(() => {
+      if (!paymentWindow.closed) {
+        return;
+      }
+
+      if (this.paymentWindowCheckIntervalId !== null) {
+        window.clearInterval(this.paymentWindowCheckIntervalId);
+        this.paymentWindowCheckIntervalId = null;
+      }
+
+      this.isRedirectingToPayment = false;
+      this.cartService.syncCurrentUser();
+      this.cartMessage = orderNumber
+        ? `Pedido creado correctamente con el numero de pedido #${orderNumber}. ${emailText}`
+        : `Pedido creado correctamente. ${emailText}`;
+      window.alert(this.cartMessage);
+      this.cdr.detectChanges();
+    }, 500);
   }
 
   get isAdmin(): boolean {
