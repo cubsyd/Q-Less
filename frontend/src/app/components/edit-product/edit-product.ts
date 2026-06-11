@@ -262,10 +262,6 @@ export class EditProduct implements OnInit {
     formData.append("precio", String(this.product.precio));
     formData.append("stock", String(this.product.stock));
 
-    if (this.product.categoria_id) {
-      formData.append("categoria_id", String(this.product.categoria_id));
-    }
-
     this.imageSlots.forEach((index) => {
       const file = this.selectedFiles[index];
 
