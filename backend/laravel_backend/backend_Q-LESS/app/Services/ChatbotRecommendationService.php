@@ -150,7 +150,7 @@ class ChatbotRecommendationService
         if ($start === false || $end === false || $end <= $start) {
             return null;
         }
-        
+
         $decodedObject = json_decode(substr($cleanText, $start, $end - $start + 1), true);
 
         if (is_string($decodedObject)) {

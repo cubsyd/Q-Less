@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -30,26 +31,11 @@ class UserController extends Controller
         ]);
     }
 
-    public function photo(User $user)
-    {
-        if (!$user->profile_photo_path || !Storage::disk('public')->exists($user->profile_photo_path)) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Foto de perfil no encontrada.',
-            ], 404);
-        }
-
-        $path = Storage::disk('public')->path($user->profile_photo_path);
-
-        return response()->file($path, [
-            'Cache-Control' => 'public, max-age=3600',
-        ]);
-    }
-
     public function update(Request $request, User $user)
     {
         $data = $request->validate([
             'name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'telefono' => ['sometimes', 'nullable', 'string', 'min:7', 'max:30', 'regex:/^[0-9+\s()-]+$/'],
             'password' => [
                 'nullable',
@@ -58,18 +44,24 @@ class UserController extends Controller
                 'confirmed',
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/',
             ],
-            'photo' => ['nullable', 'image', 'max:3072'],
+            'photo' => ['nullable', 'image', 'max:2048'],
         ], [
+            'email.email' => 'El correo no tiene un formato valido.',
+            'email.unique' => 'Este correo ya esta registrado.',
             'password.min' => 'La contrasena debe tener minimo 8 caracteres.',
             'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
             'password.confirmed' => 'Las contrasenas no coinciden.',
             'telefono.regex' => 'El telefono solo puede contener numeros, espacios, parentesis, + o -.',
             'photo.image' => 'La foto debe ser una imagen valida.',
-            'photo.max' => 'La foto no puede superar 3 MB.',
+            'photo.max' => 'La foto no puede superar 2 MB.',
         ]);
 
         if ($request->has('name') && trim((string) ($data['name'] ?? '')) !== '') {
             $user->name = trim((string) $data['name']);
+        }
+
+        if ($request->has('email') && trim((string) ($data['email'] ?? '')) !== '') {
+            $user->email = trim((string) $data['email']);
         }
 
         if ($request->has('telefono')) {
@@ -128,7 +120,7 @@ class UserController extends Controller
             'rol' => $user->rol,
             'profile_photo_path' => $user->profile_photo_path,
             'profile_photo_url' => $user->profile_photo_path
-                ? request()->getSchemeAndHttpHost() . '/api/users/' . $user->id . '/photo'
+                ? asset(Storage::url($user->profile_photo_path)) . '?v=' . optional($user->updated_at)->timestamp
                 : null,
             'created_at' => optional($user->created_at)->toISOString(),
             'updated_at' => optional($user->updated_at)->toISOString(),

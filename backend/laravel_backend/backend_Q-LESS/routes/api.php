@@ -39,7 +39,6 @@ Route::get('/orders/user/{userId}', [OrderController::class, 'userOrders']);
 Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
 Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 Route::get('/users', [UserController::class, 'index']);
-Route::get('/users/{user}/photo', [UserController::class, 'photo']);
 Route::get('/users/{user}', [UserController::class, 'show']);
 Route::post('/users/{user}', [UserController::class, 'update']);
 Route::patch('/users/{user}', [UserController::class, 'update']);
