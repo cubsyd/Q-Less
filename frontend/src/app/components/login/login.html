@@ -34,15 +34,6 @@
 
         <button type="submit" class="login-button">Inicia sesión</button>
 
-        <button
-          *ngIf="pendingVerificationEmail"
-          type="button"
-          class="register-button"
-          (click)="resendVerificationEmail()"
-          [disabled]="isLoading">
-          Reenviar correo de verificacion
-        </button>
-
         <div class="divider">
           <span>O</span>
         </div>

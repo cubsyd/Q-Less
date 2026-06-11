@@ -14,6 +14,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./user-profile.css']
 })
 export class UserProfileComponent implements OnInit {
+  private readonly maxPhotoSize = 4 * 1024 * 1024;
   user: any = { name: '', email: '', telefono: '', profile_photo_url: null };
   passwordData = {
     password: '',
@@ -65,6 +66,14 @@ export class UserProfileComponent implements OnInit {
   onFileChange(event: any): void {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
+
+    if (file.size > this.maxPhotoSize) {
+      this.selectedPhoto = null;
+      this.message = 'La foto no puede superar 4 MB.';
+      event.target.value = '';
+      this.cdr.detectChanges();
+      return;
+    }
 
     this.selectedPhoto = file;
     this.previewUrl = URL.createObjectURL(file);
