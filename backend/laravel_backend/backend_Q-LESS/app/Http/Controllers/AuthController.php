@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -21,6 +22,7 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
             'telefono' => 'required|string|min:7|max:30|regex:/^[0-9+\s()-]+$/',
+            'rol' => 'required|string|in:aprendiz,instructor',
             'password' => [
                 'required',
                 'string',
@@ -33,12 +35,14 @@ class AuthController extends Controller
             'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
             'password.confirmed' => 'Las contrasenas no coinciden.',
             'telefono.regex' => 'El telefono solo puede contener numeros, espacios, parentesis, + o -.',
+            'rol.in' => 'Selecciona si eres aprendiz o instructor.',
         ]);
 
+        $emailVerificationEnabled = $this->emailVerificationEnabled();
         $existingUser = User::where('email', $request->email)->first();
 
         if ($existingUser) {
-            if ($existingUser->email_verified_at) {
+            if (!$emailVerificationEnabled || $existingUser->email_verified_at) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Este correo ya esta registrado. Inicia sesion con tu cuenta.',
@@ -54,6 +58,7 @@ class AuthController extends Controller
 
             $existingUser->name = $request->name;
             $existingUser->telefono = $request->telefono;
+            $existingUser->rol = $request->rol;
             $existingUser->password = Hash::make($request->password);
             $existingUser->email_verification_sent_at = now();
             $existingUser->save();
@@ -73,28 +78,45 @@ class AuthController extends Controller
 
         $isAdmin = $request->email === $this->adminEmail;
 
-        $user = User::create([
+        if (!$isAdmin && !$emailVerificationEnabled) {
+            Log::error('La verificacion de correo no esta habilitada porque faltan columnas en users.');
+
+            return response()->json([
+                'status' => false,
+                'message' => 'No se pudo preparar la verificacion de correo. Intenta de nuevo en unos minutos.',
+                'email_verification_required' => true,
+            ], 503);
+        }
+
+        $userData = [
             'name' => $request->name,
             'email' => $request->email,
-            'email_verified_at' => $isAdmin ? now() : null,
-            'email_verification_token' => $isAdmin ? null : Str::random(64),
-            'email_verification_sent_at' => $isAdmin ? null : now(),
             'telefono' => $request->telefono,
-            'rol' => $isAdmin ? 'admin' : 'usuario',
+            'rol' => $isAdmin ? 'admin' : $request->rol,
             'password' => Hash::make($request->password),
-        ]);
+        ];
+
+        if ($emailVerificationEnabled) {
+            $userData['email_verified_at'] = $isAdmin ? now() : null;
+            $userData['email_verification_token'] = $isAdmin ? null : Str::random(64);
+            $userData['email_verification_sent_at'] = $isAdmin ? null : now();
+        }
+
+        $user = User::create($userData);
 
         $emailSent = $isAdmin || $this->sendVerificationEmail($user);
 
         return response()->json([
-            'status' => true,
+            'status' => $emailSent,
             'message' => $isAdmin
                 ? 'Usuario administrador registrado correctamente.'
-                : 'Usuario registrado correctamente. Revisa tu correo para verificar la cuenta.',
+                : ($emailSent
+                    ? 'Usuario registrado correctamente. Revisa tu correo para verificar la cuenta.'
+                    : 'Usuario registrado, pero no se pudo enviar el correo de verificacion. Usa la opcion de reenviar correo desde el login.'),
             'user' => $user,
-            'email_verification_required' => !$isAdmin,
+            'email_verification_required' => $emailVerificationEnabled && !$isAdmin,
             'email_sent' => $emailSent,
-        ], 201);
+        ], $emailSent ? 201 : 202);
     }
 
     public function login(Request $request)
@@ -139,7 +161,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        if ($user->email_verification_token && !$user->email_verified_at) {
+        if ($this->emailVerificationEnabled() && $user->email_verification_token && !$user->email_verified_at) {
             return response()->json([
                 'status' => false,
                 'message' => 'Debes verificar tu correo antes de iniciar sesion. Revisa tu bandeja de entrada.',
@@ -149,7 +171,9 @@ class AuthController extends Controller
 
         RateLimiter::clear($key);
 
-        $role = $user->email === $this->adminEmail ? 'admin' : 'usuario';
+        $role = $user->email === $this->adminEmail
+            ? 'admin'
+            : (in_array($user->rol, ['aprendiz', 'instructor'], true) ? $user->rol : 'aprendiz');
 
         if ($user->rol !== $role) {
             $user->rol = $role;
@@ -190,6 +214,13 @@ class AuthController extends Controller
 
     public function resendVerificationEmail(Request $request)
     {
+        if (!$this->emailVerificationEnabled()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'La verificacion de correo no esta habilitada en esta base de datos.',
+            ], 422);
+        }
+
         $request->validate([
             'email' => 'required|email|exists:users,email',
         ]);
@@ -240,8 +271,15 @@ class AuthController extends Controller
 
     private function frontendUrl(string $path): string
     {
-        $baseUrl = rtrim((string) config('services.mercadopago.frontend_url', 'http://localhost:4200'), '/');
+        $baseUrl = rtrim((string) config('services.app_urls.frontend_url'), '/');
 
         return $baseUrl . $path;
+    }
+
+    private function emailVerificationEnabled(): bool
+    {
+        return Schema::hasColumn('users', 'email_verified_at')
+            && Schema::hasColumn('users', 'email_verification_token')
+            && Schema::hasColumn('users', 'email_verification_sent_at');
     }
 }

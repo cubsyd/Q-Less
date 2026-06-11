@@ -18,6 +18,7 @@ class User extends Authenticatable
         'email_verification_sent_at',
         'telefono',
         'rol',
+        'profile_photo_path',
         'password',
     ];
 
@@ -36,5 +37,10 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Producto::class, 'favorite_products', 'user_id', 'producto_id')
             ->withTimestamps();
+    }
+
+    public function chatbotConversations()
+    {
+        return $this->hasMany(ChatbotConversation::class);
     }
 }

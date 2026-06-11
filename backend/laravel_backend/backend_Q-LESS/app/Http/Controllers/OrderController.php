@@ -130,11 +130,15 @@ class OrderController extends Controller
             return $referenceExpiresAt;
         }
 
+        if ($order->expires_at) {
+            return $order->expires_at;
+        }
+
         if ($order->created_at) {
             return $order->created_at->copy()->addMinutes(self::ORDER_EXPIRATION_MINUTES);
         }
 
-        return $order->expires_at;
+        return null;
     }
 
     private function expiresAtFromPaymentReference(Order $order): ?Carbon

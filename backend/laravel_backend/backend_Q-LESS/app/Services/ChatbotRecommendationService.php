@@ -21,7 +21,7 @@ class ChatbotRecommendationService
         $apiKey = trim((string) config('services.openai.api_key'));
 
         if ($provider !== 'openai' || $apiKey === '') {
-            return $this->buildOpenAiUnavailableResponse($message);
+            return $this->recommendLocally($message);
         }
 
         try {
@@ -45,19 +45,11 @@ class ChatbotRecommendationService
                 'error' => $exception->getMessage(),
             ]);
 
-            return [
-                'status' => false,
-                'query' => $message,
-                'project_title' => 'No pude consultar OpenAI',
-                'summary' => $userMessage,
-                'steps' => [],
-                'available_products' => [],
-                'unavailable_products' => [],
-                'alternative_products' => [],
-                'notes' => [
-                    'No se uso la recomendacion local porque el chatbot esta configurado para responder con OpenAI.',
-                ],
-            ];
+            $localResponse = $this->recommendLocally($message);
+            $localResponse['notes'][] = $userMessage;
+            $localResponse['notes'][] = 'Se uso recomendacion local porque OpenAI no respondio correctamente.';
+
+            return $this->normalizeResponseShape($localResponse);
         }
     }
 
@@ -158,7 +150,7 @@ class ChatbotRecommendationService
         if ($start === false || $end === false || $end <= $start) {
             return null;
         }
-
+        
         $decodedObject = json_decode(substr($cleanText, $start, $end - $start + 1), true);
 
         if (is_string($decodedObject)) {
@@ -180,10 +172,12 @@ class ChatbotRecommendationService
             'Si un producto tiene stock 0, solo puede aparecer en unavailable_products.',
             'Si un material no existe en el inventario, menciona la limitacion en notes y usa alternativas reales del inventario.',
             'Sugiere alternativas unicamente a partir del inventario disponible con stock mayor que 0.',
-            'Devuelve maximo 6 pasos, 5 productos disponibles, 3 productos no disponibles, 4 alternativas y 5 notas.',
+            'Devuelve entre 6 y 10 pasos cuando el usuario pida como hacer una tarea; cada paso debe ser concreto, accionable y facil de seguir.',
+            'Los pasos deben explicar preparacion, armado, decoracion, revision final y consejos practicos segun la tarea.',
+            'Devuelve maximo 5 productos disponibles, 3 productos no disponibles, 4 alternativas y 5 notas.',
             'Prioriza productos por utilidad real para el trabajo del usuario, no por orden del inventario.',
             'Responde solo con el JSON solicitado.',
-            'Escribe siempre en espanol claro y amable.',
+            'Escribe siempre en espanol claro, paciente y amable, como si guiaras a un estudiante paso a paso.',
         ]);
     }
 
@@ -345,20 +339,120 @@ class ChatbotRecommendationService
         return $response;
     }
 
-    private function buildOpenAiUnavailableResponse(string $message): array
+    private function recommendLocally(string $message): array
+    {
+        $inventory = $this->inventorySnapshot();
+        $normalizedMessage = $this->normalize($message);
+        $scoredProducts = collect($inventory)
+            ->map(function (array $product) use ($normalizedMessage) {
+                $haystack = $this->normalize(implode(' ', [
+                    $product['nombre'] ?? '',
+                    $product['descripcion'] ?? '',
+                    $product['categoria'] ?? '',
+                ]));
+
+                $score = 0;
+                foreach (preg_split('/\s+/', $normalizedMessage, -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+                    if (mb_strlen($word) < 3) {
+                        continue;
+                    }
+
+                    if (str_contains($haystack, $word)) {
+                        $score += 3;
+                    }
+                }
+
+                foreach ($this->projectKeywordMap() as $projectKeyword => $productKeywords) {
+                    if (!str_contains($normalizedMessage, $projectKeyword)) {
+                        continue;
+                    }
+
+                    foreach ($productKeywords as $productKeyword) {
+                        if (str_contains($haystack, $productKeyword)) {
+                            $score += 5;
+                        }
+                    }
+                }
+
+                return [
+                    ...$product,
+                    'score' => $score,
+                    'reason' => $score > 0
+                        ? 'Coincide con lo que necesitas para este trabajo.'
+                        : 'Puede servirte como material complementario.',
+                ];
+            })
+            ->sortByDesc(fn (array $product) => ((int) $product['score'] * 100000) + (int) $product['stock'])
+            ->values();
+
+        $available = $scoredProducts
+            ->filter(fn (array $product) => (int) $product['stock'] > 0 && (int) $product['score'] > 0)
+            ->take(5)
+            ->map(fn (array $product) => $this->stripScore($product))
+            ->values()
+            ->all();
+
+        $alternatives = $scoredProducts
+            ->filter(fn (array $product) => (int) $product['stock'] > 0 && !collect($available)->pluck('id')->contains($product['id']))
+            ->take(4)
+            ->map(fn (array $product) => $this->stripScore($product))
+            ->values()
+            ->all();
+
+        $unavailable = $scoredProducts
+            ->filter(fn (array $product) => (int) $product['stock'] <= 0 && (int) $product['score'] > 0)
+            ->take(3)
+            ->map(fn (array $product) => $this->stripScore([
+                ...$product,
+                'reason' => 'Este producto parece util para tu solicitud, pero no tiene stock disponible.',
+            ]))
+            ->values()
+            ->all();
+
+        if (count($available) === 0) {
+            $available = $scoredProducts
+                ->filter(fn (array $product) => (int) $product['stock'] > 0)
+                ->take(5)
+                ->map(fn (array $product) => $this->stripScore($product))
+                ->values()
+                ->all();
+        }
+
+        return [
+            'status' => true,
+            'query' => $message,
+            'project_title' => 'Recomendacion de materiales',
+            'summary' => count($available) > 0
+                ? 'Claro, te ayudo. Estos productos del inventario actual pueden servirte y te dejo una guia sencilla para avanzar sin enredarte.'
+                : 'No encontre coincidencias exactas, pero aun podemos resolverlo con alternativas disponibles y una guia paso a paso.',
+            'steps' => $this->buildLocalSteps($message, $available, $alternatives),
+            'available_products' => $available,
+            'unavailable_products' => $unavailable,
+            'alternative_products' => $alternatives,
+            'notes' => [
+                'Respuesta generada localmente con el inventario actual de Q-LESS.',
+            ],
+        ];
+    }
+
+    private function stripScore(array $product): array
+    {
+        unset($product['score']);
+
+        return $product;
+    }
+
+    private function projectKeywordMap(): array
     {
         return [
-            'status' => false,
-            'query' => $message,
-            'project_title' => 'OpenAI no esta configurado',
-            'summary' => 'Configura CHATBOT_PROVIDER=openai y OPENAI_API_KEY en el archivo .env para usar el asistente de OpenAI.',
-            'steps' => [],
-            'available_products' => [],
-            'unavailable_products' => [],
-            'alternative_products' => [],
-            'notes' => [
-                'No se uso la recomendacion local porque el chatbot debe responder con OpenAI.',
-            ],
+            'maqueta' => ['cartulina', 'carton', 'pegante', 'tijera', 'regla', 'marcador', 'tempera'],
+            'cartelera' => ['cartulina', 'marcador', 'colores', 'pegante', 'regla'],
+            'afiche' => ['cartulina', 'marcador', 'colores', 'tempera'],
+            'poster' => ['cartulina', 'marcador', 'colores', 'tempera'],
+            'dibujo' => ['lapiz', 'colores', 'marcador', 'borrador', 'hoja'],
+            'sistema solar' => ['cartulina', 'carton', 'tempera', 'colores', 'pegante'],
+            'celula' => ['cartulina', 'plastilina', 'colores', 'marcador', 'pegante'],
+            'manualidad' => ['cartulina', 'pegante', 'tijera', 'colores', 'tempera'],
         ];
     }
 
@@ -455,9 +549,10 @@ class ChatbotRecommendationService
             'project_title' => 'Necesito una instruccion',
             'summary' => 'Dime que trabajo, maqueta, cartelera, dibujo o material necesitas para poder recomendarte productos del inventario.',
             'steps' => [
-                'Escribe que quieres hacer, por ejemplo: "Necesito una maqueta del sistema solar".',
-                'Si ya sabes los materiales, mencionalos para revisar disponibilidad.',
-                'Con esa instruccion te mostrare productos disponibles y alternativas.',
+                'Cuentame que tarea necesitas hacer, por ejemplo: "Necesito una maqueta del sistema solar".',
+                'Si tu profesor te pidio una condicion especial, como tamano, colores o materiales obligatorios, incluyela en el mensaje.',
+                'Si ya tienes algunos materiales en casa, tambien puedes decirme cuales para recomendarte solo lo que falta.',
+                'Con esa informacion te dare un paso a paso claro, productos disponibles y alternativas si algo no esta en stock.',
             ],
             'available_products' => [],
             'unavailable_products' => [],
@@ -471,5 +566,68 @@ class ChatbotRecommendationService
     private function normalize(string $value): string
     {
         return Str::lower(Str::ascii(trim($value)));
+    }
+
+    private function buildLocalSteps(string $message, array $available, array $alternatives): array
+    {
+        $normalizedMessage = $this->normalize($message);
+        $materialNames = collect($available)
+            ->merge($alternatives)
+            ->pluck('nombre')
+            ->filter()
+            ->take(5)
+            ->implode(', ');
+
+        $materialsStep = $materialNames !== ''
+            ? "Separa los materiales que vas a usar: {$materialNames}. Tenlos sobre la mesa antes de empezar para trabajar con calma."
+            : 'Separa los materiales que tengas disponibles y revisa que esten limpios, completos y listos para usar.';
+
+        if (str_contains($normalizedMessage, 'maqueta')) {
+            return [
+                $materialsStep,
+                'Haz un boceto rapido de la maqueta en una hoja: marca la base, las piezas principales y donde ira cada rotulo.',
+                'Prepara la base con carton o cartulina resistente; si necesitas recortar, mide primero con regla para que no quede torcido.',
+                'Arma primero las piezas grandes y deja las pequenas para el final, asi puedes corregir la distribucion sin danar detalles.',
+                'Pega cada parte con poca cantidad de pegante y espera unos minutos entre piezas para que la estructura quede firme.',
+                'Agrega color, nombres y detalles visuales con marcadores, colores o temperas segun lo que tengas disponible.',
+                'Revisa que la maqueta explique claramente el tema: si falta informacion, anade pequenos letreros o flechas.',
+                'Antes de entregarla, mira la maqueta desde el frente y desde arriba para corregir manchas, piezas sueltas o espacios vacios.',
+            ];
+        }
+
+        if (str_contains($normalizedMessage, 'cartelera') || str_contains($normalizedMessage, 'afiche') || str_contains($normalizedMessage, 'poster')) {
+            return [
+                $materialsStep,
+                'Define el titulo principal y escribelo primero en borrador para calcular el espacio que ocupara.',
+                'Divide la cartelera en secciones: titulo, informacion principal, imagenes y conclusion o mensaje final.',
+                'Pasa el titulo a la cartulina con letras grandes y legibles; usa regla si quieres mantener una linea recta.',
+                'Agrega dibujos, recortes o iconos que apoyen la informacion sin llenar demasiado la superficie.',
+                'Escribe frases cortas y claras; evita parrafos largos para que se pueda leer rapido desde lejos.',
+                'Resalta palabras importantes con color, subrayado o marcador, manteniendo una combinacion ordenada.',
+                'Al final revisa ortografia, limpieza y equilibrio visual antes de pegar cualquier elemento definitivo.',
+            ];
+        }
+
+        if (str_contains($normalizedMessage, 'dibujo') || str_contains($normalizedMessage, 'dibujar') || str_contains($normalizedMessage, 'ilustracion')) {
+            return [
+                $materialsStep,
+                'Empieza con un boceto suave en lapiz, usando figuras simples para ubicar cada parte del dibujo.',
+                'Corrige proporciones antes de remarcar; es mas facil ajustar lineas suaves que borrar trazos fuertes.',
+                'Cuando la forma general este lista, marca los contornos principales con cuidado.',
+                'Aplica color por capas suaves, empezando por tonos claros y dejando los oscuros para sombras o detalles.',
+                'Agrega textura y detalles pequenos al final para que el dibujo no se vea plano.',
+                'Limpia bordes, borra guias visibles y revisa que el resultado responda al tema pedido.',
+            ];
+        }
+
+        return [
+            $materialsStep,
+            'Lee de nuevo la consigna de la tarea y anota que debe verse o explicarse en el resultado final.',
+            'Haz un plan corto en una hoja: materiales, partes principales y orden de trabajo.',
+            'Comienza por la estructura o contenido mas importante antes de decorar.',
+            'Usa los productos disponibles para resolver lo esencial y deja las alternativas para detalles o reemplazos.',
+            'Trabaja por partes y revisa cada avance antes de pegar, colorear o marcar de forma definitiva.',
+            'Cuando termines, verifica limpieza, ortografia, firmeza y que la tarea se entienda sin tener que explicarla demasiado.',
+        ];
     }
 }
