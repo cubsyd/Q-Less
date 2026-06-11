@@ -1,0 +1,10 @@
+{
+  "name": "q-less-frontend-deploy",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "npm --prefix frontend ci && npm --prefix frontend run build",
+    "start": "npm --prefix frontend start"
+  }
+}
