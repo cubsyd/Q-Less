@@ -251,7 +251,9 @@ export class CartComponent implements OnInit, OnDestroy {
         paymentWindow?.close();
 
         this.cartMessage =
-          error?.error?.mercadopago_error?.message
+          error?.status === 0
+            ? 'No se pudo conectar con el backend para abrir Mercado Pago. Revisa CORS/FRONTEND_URL en Railway y vuelve a intentar.'
+            : error?.error?.mercadopago_error?.message
           || error?.error?.message
           || error?.message
           || 'No se pudo abrir Mercado Pago en este momento.';
