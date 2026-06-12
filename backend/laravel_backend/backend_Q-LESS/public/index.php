@@ -10,7 +10,11 @@ $host = $origin ? parse_url($origin, PHP_URL_HOST) : null;
 
 if (
     is_string($host)
-    && (str_ends_with($host, '.up.railway.app') || str_ends_with($host, '.railway.app'))
+    && (
+        in_array($host, ['localhost', '127.0.0.1'], true)
+        || str_ends_with($host, '.up.railway.app')
+        || str_ends_with($host, '.railway.app')
+    )
 ) {
     header('Access-Control-Allow-Origin: '.$origin);
     header('Vary: Origin');
