@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
+use RuntimeException;
 
 class PaymentController extends Controller
 {
@@ -86,12 +87,16 @@ class PaymentController extends Controller
             '-' .
             Str::upper(Str::random(6));
 
-        $orderResult = $this->createOrderFromCart(
-            $user,
-            $externalReference,
-            $isSimulatedPayment ? 'mercadopago_simulado' : 'mercadopago',
-            $isSimulatedPayment ? 'simulado' : 'pending'
-        );
+        try {
+            $orderResult = $this->createOrderFromCart(
+                $user,
+                $externalReference,
+                $isSimulatedPayment ? 'mercadopago_simulado' : 'mercadopago',
+                $isSimulatedPayment ? 'simulado' : 'pending'
+            );
+        } catch (RuntimeException $exception) {
+            return $this->emailRequiredError($exception);
+        }
 
         if ($isSimulatedPayment) {
             return response()->json(
@@ -202,12 +207,16 @@ class PaymentController extends Controller
         $user = User::findOrFail($data['user_id']);
         $paymentReference = $data['payment_reference'] ?? null;
 
-        $orderResult = $this->createOrderFromCart(
-            $user,
-            $paymentReference,
-            $data['payment_provider'] ?? 'mercadopago_simulado',
-            $data['payment_status'] ?? 'simulado'
-        );
+        try {
+            $orderResult = $this->createOrderFromCart(
+                $user,
+                $paymentReference,
+                $data['payment_provider'] ?? 'mercadopago_simulado',
+                $data['payment_status'] ?? 'simulado'
+            );
+        } catch (RuntimeException $exception) {
+            return $this->emailRequiredError($exception);
+        }
 
         return response()->json([
 
@@ -409,17 +418,26 @@ class PaymentController extends Controller
         return $orderNumber;
     }
 
+    private function emailRequiredError(RuntimeException $exception)
+    {
+        return response()->json([
+            'status' => false,
+            'message' => $exception->getMessage(),
+            'email_required' => true,
+        ], 500);
+    }
+
     private function ensureDeliverableMailConfigured(): void
     {
         $mailer = (string) config('mail.default');
         $fromAddress = (string) config('mail.from.address');
 
         if (in_array($mailer, ['log', 'array'], true)) {
-            throw new \RuntimeException('El correo no esta configurado para entrega real. Usa MAIL_MAILER=smtp, resend, postmark, ses o mailgun.');
+            throw new RuntimeException('El correo no esta configurado para entrega real. Usa MAIL_MAILER=smtp, resend, postmark, ses o mailgun.');
         }
 
         if ($fromAddress === '' || $fromAddress === 'hello@example.com') {
-            throw new \RuntimeException('MAIL_FROM_ADDRESS debe ser un correo real y verificado por el proveedor SMTP.');
+            throw new RuntimeException('MAIL_FROM_ADDRESS debe ser un correo real y verificado por el proveedor SMTP.');
         }
     }
 
@@ -447,7 +465,7 @@ class PaymentController extends Controller
             }
         }
 
-        throw new \RuntimeException(
+        throw new RuntimeException(
             'No se pudo enviar el correo del pedido al usuario. Verifica las variables SMTP de Railway.',
             previous: $lastException
         );
