@@ -274,8 +274,6 @@ class PaymentController extends Controller
         string $paymentProvider,
         string $paymentStatus
     ): array {
-        $this->ensureDeliverableMailConfigured();
-
         if ($paymentReference) {
             $existingOrder = Order::where('user_id', $user->id)
                 ->where('payment_reference', $paymentReference)
@@ -289,11 +287,11 @@ class PaymentController extends Controller
                     ]);
                 }
 
-                $this->sendOrderEmailOrFail($user, $existingOrder->fresh());
+                $freshOrder = $existingOrder->fresh();
 
                 return [
-                    'order' => $existingOrder->fresh(),
-                    'email_sent' => true,
+                    'order' => $freshOrder,
+                    'email_sent' => $this->sendOrderEmail($user, $freshOrder),
                     'already_created' => true,
                 ];
             }
@@ -362,14 +360,14 @@ class PaymentController extends Controller
                 'expires_at' => now()->addMinutes(10),
             ]);
 
-            $this->sendOrderEmailOrFail($user, $order);
+            $emailSent = $this->sendOrderEmail($user, $order);
 
             CartReservation::where('user_id', $user->id)
                 ->delete();
 
             return [
                 'order' => $order,
-                'email_sent' => true,
+                'email_sent' => $emailSent,
                 'already_created' => false,
             ];
         });
@@ -441,33 +439,34 @@ class PaymentController extends Controller
         }
     }
 
-    private function sendOrderEmailOrFail(User $user, Order $order): void
+    private function sendOrderEmail(User $user, Order $order): bool
     {
-        $lastException = null;
+        try {
+            $this->ensureDeliverableMailConfigured();
+        } catch (RuntimeException $exception) {
+            Log::warning('No se intento enviar el correo de pedido por configuracion incompleta.', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
 
-        for ($attempt = 1; $attempt <= 3; $attempt++) {
-            try {
-                Mail::to($user->email)->send(new DeliveryCodeMail($order));
-
-                return;
-            } catch (\Throwable $exception) {
-                $lastException = $exception;
-
-                Log::warning('No se pudo enviar el correo de pedido creado.', [
-                    'order_id' => $order->id,
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'attempt' => $attempt,
-                    'error' => $exception->getMessage(),
-                ]);
-
-                usleep(250000);
-            }
+            return false;
         }
 
-        throw new RuntimeException(
-            'No se pudo enviar el correo del pedido al usuario. Verifica las variables SMTP de Railway.',
-            previous: $lastException
-        );
+        try {
+            Mail::to($user->email)->send(new DeliveryCodeMail($order));
+
+            return true;
+        } catch (\Throwable $exception) {
+            Log::warning('No se pudo enviar el correo de pedido creado.', [
+                'order_id' => $order->id,
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
     }
 }
