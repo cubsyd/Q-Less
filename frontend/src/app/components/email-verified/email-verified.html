@@ -1,42 +1,45 @@
-<div class="verified-container">
-
-  <div class="left-panel">
-
-    <div class="brand">
-      <h1>Q-LESS</h1>
-      <div class="line"></div>
-
-      <p>
-        {{ isInvalid ? 'El enlace de verificacion no es valido o ya fue usado.' : 'Tu cuenta ha sido verificada correctamente. Ya puedes acceder a todos los servicios de la papeleria virtual del SENA.' }}
-      </p>
+<main class="verification-page">
+  <section class="verification-shell">
+    <div class="brand-panel">
+      <div class="brand-mark">Q-LESS</div>
+      <h1>{{ title }}</h1>
+      <p>{{ description }}</p>
     </div>
 
-  </div>
-
-  <div class="right-panel">
-
-    <div class="verified-card">
-
-      <div class="success-icon" [class.invalid]="isInvalid">
-        {{ isInvalid ? '!' : 'OK' }}
+    <div class="status-panel">
+      <div class="status-icon" [class.invalid]="isInvalid" [class.pending]="isPending">
+        {{ isPending ? '@' : (isInvalid ? '!' : 'OK') }}
       </div>
 
-      <h2>{{ isInvalid ? 'Enlace invalido' : 'Correo verificado' }}</h2>
+      <h2>{{ title }}</h2>
 
-      <p>
-        {{ isInvalid ? 'Solicita un nuevo correo de verificacion desde el login.' : 'La verificacion se realizo exitosamente.' }}
+      <p class="status-copy" *ngIf="isPending && email">
+        Enviamos la verificacion a <strong>{{ email }}</strong>.
       </p>
 
-      <p class="subtitle">
-        {{ isInvalid ? 'Si ya verificaste tu cuenta, puedes iniciar sesion.' : 'Ya puedes iniciar sesion en Q-LESS.' }}
+      <p class="status-copy" *ngIf="isPending && !email">
+        Abre el enlace que enviamos a tu correo para activar la cuenta.
       </p>
+
+      <p class="status-copy" *ngIf="!isPending">
+        {{ isInvalid ? 'Solicita un nuevo correo si todavia no puedes entrar.' : 'La verificacion se realizo exitosamente.' }}
+      </p>
+
+      <button
+        *ngIf="isPending && email"
+        type="button"
+        class="btn-secondary"
+        [disabled]="isResending"
+        (click)="resendVerification()"
+      >
+        {{ isResending ? 'Enviando...' : 'Reenviar correo' }}
+      </button>
+
+      <p class="resend-message" *ngIf="resendMessage">{{ resendMessage }}</p>
 
       <a routerLink="/login" class="btn-login">
         Iniciar sesion
       </a>
-
     </div>
-
-  </div>
-
-</div>
+  </section>
+</main>
