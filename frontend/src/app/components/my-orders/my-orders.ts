@@ -14,6 +14,7 @@ import { environment } from '../../../environments/environment';
 })
 export class MyOrdersComponent implements OnInit, OnDestroy {
   userName: string | null = '';
+  userPhotoUrl: string | null = null;
   pedidos: any[] = [];
   isLoadingOrders = false;
   ordersMessage = '';
@@ -36,6 +37,7 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
     }
 
     this.obtenerMisPedidos();
+    this.loadNavProfile();
   }
 
   ngOnDestroy(): void {
@@ -113,6 +115,24 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
       error: () => {
         this.authService.clearSession();
         this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  getNavInitials(): string {
+    return this.authService.getUserInitials('U');
+  }
+
+  private loadNavProfile(): void {
+    this.userPhotoUrl = this.authService.getUserPhotoUrl();
+
+    this.authService.loadCurrentUser().subscribe({
+      next: (response) => {
+        this.userPhotoUrl = response?.user?.profile_photo_url || this.authService.getUserPhotoUrl();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
       }
     });
   }

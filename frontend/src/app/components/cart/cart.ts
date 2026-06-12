@@ -15,6 +15,7 @@ export class CartComponent implements OnInit, OnDestroy {
   cartItems: CartItem[] = [];
   total = 0;
   cartMessage = '';
+  userPhotoUrl: string | null = null;
   isRedirectingToPayment = false;
   loadingItems = new Set<number>();
   selectedImageIndexes: Record<number, number> = {};
@@ -45,6 +46,7 @@ export class CartComponent implements OnInit, OnDestroy {
     });
 
     this.cartService.syncCurrentUser();
+    this.loadNavProfile();
     this.cartService.items$.subscribe(items => {
       this.cartItems = items.map(item => ({ ...item }));
       this.total = this.cartService.getTotal();
@@ -284,6 +286,24 @@ export class CartComponent implements OnInit, OnDestroy {
 
   get isAdmin(): boolean {
     return this.authService.isAdmin();
+  }
+
+  getNavInitials(): string {
+    return this.authService.getUserInitials('U');
+  }
+
+  private loadNavProfile(): void {
+    this.userPhotoUrl = this.authService.getUserPhotoUrl();
+
+    this.authService.loadCurrentUser().subscribe({
+      next: (response) => {
+        this.userPhotoUrl = response?.user?.profile_photo_url || this.authService.getUserPhotoUrl();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private markPaymentApproved(externalReference: string | null): void {

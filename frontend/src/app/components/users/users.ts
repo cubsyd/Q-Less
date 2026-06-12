@@ -81,6 +81,10 @@ export class UsersComponent implements OnInit, OnDestroy {
       return null;
     }
 
+    if (String(user.profile_photo_url).startsWith('data:')) {
+      return user.profile_photo_url;
+    }
+
     const separator = String(user.profile_photo_url).includes('?') ? '&' : '?';
     const version = encodeURIComponent(user.updated_at || Date.now());
 

@@ -17,6 +17,7 @@ import { environment } from '../../../environments/environment';
 })
 export class ProductsComponent implements OnInit, OnDestroy {
   userName: string | null = '';
+  userPhotoUrl: string | null = null;
   productos: any[] = [];
   filteredProducts: any[] = [];
   searchText = '';
@@ -52,6 +53,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.userName = this.authService.getUserName('Aprendiz');
 
     if (!this.isAdmin) {
+      this.loadNavProfile();
       this.cartService.syncCurrentUser();
       this.cartService.items$.subscribe(() => {
         this.cartCount = this.cartService.getCount();
@@ -290,6 +292,24 @@ export class ProductsComponent implements OnInit, OnDestroy {
 
   get isAdmin(): boolean {
     return this.authService.isAdmin();
+  }
+
+  getNavInitials(): string {
+    return this.authService.getUserInitials('U');
+  }
+
+  private loadNavProfile(): void {
+    this.userPhotoUrl = this.authService.getUserPhotoUrl();
+
+    this.authService.loadCurrentUser().subscribe({
+      next: (response) => {
+        this.userPhotoUrl = response?.user?.profile_photo_url || this.authService.getUserPhotoUrl();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   isLowStock(product: any): boolean {

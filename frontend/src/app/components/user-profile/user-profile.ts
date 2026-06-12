@@ -27,6 +27,7 @@ export class UserProfileComponent implements OnInit {
   message = '';
   selectedPhoto: File | null = null;
   previewUrl: string | null = null;
+  navPhotoUrl: string | null = null;
   private readonly usersUrl = `${environment.apiBaseUrl}/users`;
 
   constructor(
@@ -42,6 +43,7 @@ export class UserProfileComponent implements OnInit {
       this.router.navigate(['/login']);
       return;
     }
+    this.navPhotoUrl = this.authService.getUserPhotoUrl();
     this.loadUser(userId);
   }
 
@@ -51,6 +53,8 @@ export class UserProfileComponent implements OnInit {
       next: (res) => {
         this.user = res.user || this.user;
         this.previewUrl = this.user.profile_photo_url || null;
+        this.navPhotoUrl = this.previewUrl;
+        this.authService.saveUserProfile(this.user);
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -125,10 +129,11 @@ export class UserProfileComponent implements OnInit {
       next: (res) => {
         this.user = res.user || this.user;
         this.message = res.message || 'Perfil actualizado';
-        this.authService.saveUserName(this.user.name || '');
+        this.authService.saveUserProfile(this.user);
         this.passwordData = { password: '', password_confirmation: '' };
         this.selectedPhoto = null;
         this.previewUrl = this.user.profile_photo_url || this.previewUrl;
+        this.navPhotoUrl = this.previewUrl;
         this.isSaving = false;
         this.cdr.detectChanges();
       },
@@ -192,5 +197,17 @@ export class UserProfileComponent implements OnInit {
       next: () => this.router.navigate(['/login']),
       error: () => { this.authService.clearSession(); this.router.navigate(['/login']); }
     });
+  }
+
+  getRoleLabel(): string {
+    if (this.user?.rol === 'admin') {
+      return 'Administrador';
+    }
+
+    if (this.user?.rol === 'instructor') {
+      return 'Instructor';
+    }
+
+    return 'Aprendiz';
   }
 }

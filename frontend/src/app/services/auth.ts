@@ -24,6 +24,18 @@ export class AuthService {
     return this.http.post(`${this.API_URL}/email/resend`, { email }).pipe(timeout(30000));
   }
 
+  loadCurrentUser(): Observable<any> {
+    const userId = this.getUserId();
+    return this.http.get<any>(`${this.API_URL}/users/${userId}`).pipe(
+      tap((response) => {
+        const user = response?.user;
+        if (user) {
+          this.saveUserProfile(user);
+        }
+      })
+    );
+  }
+
   saveToken(token: string): void {
     sessionStorage.setItem('auth_token', token);
     localStorage.removeItem('auth_token');
@@ -50,6 +62,11 @@ export class AuthService {
   }
 
   saveUserSession(user: any, role: string): void {
+    this.saveUserProfile(user);
+    this.saveUserRole(role);
+  }
+
+  saveUserProfile(user: any): void {
     if (user?.name) {
       sessionStorage.setItem('user_name', user.name);
     }
@@ -58,9 +75,17 @@ export class AuthService {
       sessionStorage.setItem('user_id', String(user.id));
     }
 
-    this.saveUserRole(role);
+    if (user?.profile_photo_url) {
+      sessionStorage.setItem('user_photo_url', user.profile_photo_url);
+    }
+
+    if (user?.rol) {
+      sessionStorage.setItem('user_role', user.rol);
+    }
+
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_id');
+    localStorage.removeItem('user_photo_url');
   }
 
   getUserName(defaultName = 'Aprendiz'): string {
@@ -73,6 +98,44 @@ export class AuthService {
     localStorage.removeItem('user_name');
   }
 
+  saveUserPhotoUrl(photoUrl: string | null): void {
+    if (photoUrl) {
+      sessionStorage.setItem('user_photo_url', photoUrl);
+    } else {
+      sessionStorage.removeItem('user_photo_url');
+    }
+
+    localStorage.removeItem('user_photo_url');
+  }
+
+  getUserPhotoUrl(): string | null {
+    localStorage.removeItem('user_photo_url');
+    return sessionStorage.getItem('user_photo_url');
+  }
+
+  getUserInitials(defaultInitials = 'U'): string {
+    const name = this.getUserName(defaultInitials).trim();
+    return name
+      .split(/\s+/)
+      .slice(0, 2)
+      .map(part => part.charAt(0).toUpperCase())
+      .join('') || defaultInitials;
+  }
+
+  getUserRoleLabel(): string {
+    const role = this.getUserRole();
+
+    if (role === 'admin') {
+      return 'Administrador';
+    }
+
+    if (role === 'instructor') {
+      return 'Instructor';
+    }
+
+    return 'Aprendiz';
+  }
+
   isAdmin(): boolean {
     return this.getUserRole() === 'admin';
   }
@@ -82,10 +145,12 @@ export class AuthService {
     sessionStorage.removeItem('user_name');
     sessionStorage.removeItem('user_id');
     sessionStorage.removeItem('user_role');
+    sessionStorage.removeItem('user_photo_url');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_role');
+    localStorage.removeItem('user_photo_url');
   }
 
   logout(): Observable<any> {

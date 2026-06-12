@@ -73,6 +73,35 @@ a[class*='btn']:focus-visible,
   color: #2c7a09;
 }
 
+.main-nav .nav-profile-link {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border: 2px solid rgba(44, 122, 9, 0.22);
+  border-radius: 999px;
+  background: #eef7e4;
+  color: #2c7a09;
+  display: inline-grid;
+  place-items: center;
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.main-nav .nav-profile-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.main-nav .nav-profile-link.active-link {
+  border-color: #2c7a09;
+  box-shadow: 0 0 0 3px rgba(130, 201, 30, 0.2);
+}
+
 button:disabled {
   cursor: not-allowed;
   opacity: 0.62;
