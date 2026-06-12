@@ -276,22 +276,10 @@ export class RegisterComponent {
         if (res?.status === true) {
           this.addError(
             'success',
-            res?.message || 'Cuenta creada correctamente. Revisa tu correo para verificarla.'
+            res?.message || 'Cuenta creada correctamente. Ya puedes iniciar sesion.'
           );
 
           setTimeout(() => {
-            if (res?.email_verification_required) {
-              this.router.navigate(['/email-verificado'], {
-                queryParams: {
-                  status: 'pending',
-                  email: payload.email,
-                  sent: res?.email_sent ? '1' : '0',
-                  error: res?.email_error || null,
-                }
-              });
-              return;
-            }
-
             this.router.navigate(['/login']);
           }, 1500);
 

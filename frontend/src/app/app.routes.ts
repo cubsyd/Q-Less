@@ -13,7 +13,6 @@ import { ChatConversationsComponent } from './components/chat-conversations/chat
 import { UsersComponent } from './components/users/users.js';
 import { UserProfileComponent } from './components/user-profile/user-profile.js';
 import { AuthGuard } from './guards/auth.guard.js';
-import { EmailVerifiedComponent } from './components/email-verified/email-verified.js';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -29,8 +28,6 @@ export const routes: Routes = [
   { path: 'mi-perfil', component: UserProfileComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'pedidos', component: OrdersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
   { path: 'usuarios', component: UsersComponent, canActivate: [AuthGuard], data: { adminOnly: true } },
-
-  { path: 'email-verificado', component: EmailVerifiedComponent },
 
   { path: '', redirectTo: '/login', pathMatch: 'full' },
   { path: '**', redirectTo: '/login', pathMatch: 'full' }

@@ -20,10 +20,6 @@ export class AuthService {
     return this.http.post(`${this.API_URL}/login`, credentials).pipe(timeout(30000));
   }
 
-  resendVerificationEmail(email: string): Observable<any> {
-    return this.http.post(`${this.API_URL}/email/resend`, { email }).pipe(timeout(30000));
-  }
-
   loadCurrentUser(): Observable<any> {
     const userId = this.getUserId();
     return this.http.get<any>(`${this.API_URL}/users/${userId}`).pipe(
