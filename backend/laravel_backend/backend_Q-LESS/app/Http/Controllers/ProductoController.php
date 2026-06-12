@@ -7,7 +7,6 @@ use App\Models\Producto;
 use App\Services\CartReservationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 class ProductoController extends Controller
 {
@@ -38,15 +37,10 @@ class ProductoController extends Controller
 
     private function storeUploadedFile($file): string
     {
-        $directory = public_path('storage/productos');
-        if (!File::exists($directory)) {
-            File::makeDirectory($directory, 0755, true);
-        }
+        $mimeType = $file->getMimeType() ?: 'image/jpeg';
+        $contents = file_get_contents($file->getRealPath());
 
-        $filename = Str::random(40) . '.' . $file->getClientOriginalExtension();
-        $file->move($directory, $filename);
-
-        return $this->publicUrl('storage/productos/' . $filename);
+        return 'data:' . $mimeType . ';base64,' . base64_encode($contents ?: '');
     }
 
     private function publicUrl(string $path): string
@@ -139,6 +133,10 @@ class ProductoController extends Controller
     private function deleteImageIfExists(?string $imagePath): void
     {
         if (!$imagePath) {
+            return;
+        }
+
+        if (str_starts_with($imagePath, 'data:')) {
             return;
         }
 

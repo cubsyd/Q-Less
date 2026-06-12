@@ -61,16 +61,20 @@ class PaymentController extends Controller
         $items = $cartItems->map(function (CartReservation $reservation) {
 
             $product = $reservation->producto;
-
-            return [
+            $item = [
                 'id' => (string) $product->id,
                 'title' => (string) $product->nombre,
                 'description' => (string) ($product->descripcion ?? 'Producto Q-LESS'),
-                'picture_url' => $product->image_path,
                 'quantity' => (int) $reservation->cantidad,
                 'currency_id' => config('services.mercadopago.currency', 'COP'),
                 'unit_price' => (float) $product->precio,
             ];
+
+            if (is_string($product->image_path) && str_starts_with($product->image_path, 'http')) {
+                $item['picture_url'] = $product->image_path;
+            }
+
+            return $item;
         })->values()->all();
 
         $externalReference =

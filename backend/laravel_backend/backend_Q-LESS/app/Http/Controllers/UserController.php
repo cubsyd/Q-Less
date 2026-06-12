@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class UserController extends Controller
@@ -73,11 +72,7 @@ class UserController extends Controller
         }
 
         if ($request->hasFile('photo')) {
-            if ($user->profile_photo_path) {
-                Storage::disk('public')->delete($user->profile_photo_path);
-            }
-
-            $user->profile_photo_path = $request->file('photo')->store('profile-photos', 'public');
+            $user->profile_photo_path = $this->uploadedImageDataUrl($request->file('photo'));
         }
 
         $user->save();
@@ -96,10 +91,6 @@ class UserController extends Controller
                 'status' => false,
                 'message' => 'No se puede eliminar una cuenta administradora.',
             ], 422);
-        }
-
-        if ($user->profile_photo_path) {
-            Storage::disk('public')->delete($user->profile_photo_path);
         }
 
         $user->delete();
@@ -131,9 +122,21 @@ class UserController extends Controller
             return null;
         }
 
+        if (str_starts_with($user->profile_photo_path, 'data:')) {
+            return $user->profile_photo_path;
+        }
+
         $backendUrl = rtrim((string) config('services.app_urls.backend_url'), '/');
         $version = optional($user->updated_at)->timestamp ?: time();
 
-        return $backendUrl . Storage::url($user->profile_photo_path) . '?v=' . $version;
+        return $backendUrl . '/storage/' . ltrim($user->profile_photo_path, '/') . '?v=' . $version;
+    }
+
+    private function uploadedImageDataUrl($file): string
+    {
+        $mimeType = $file->getMimeType() ?: 'image/jpeg';
+        $contents = file_get_contents($file->getRealPath());
+
+        return 'data:' . $mimeType . ';base64,' . base64_encode($contents ?: '');
     }
 }
