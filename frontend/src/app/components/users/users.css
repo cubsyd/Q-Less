@@ -55,6 +55,11 @@
   word-break: break-word;
 }
 
+.user-bio {
+  color: #4b5563;
+  line-height: 1.45;
+}
+
 .role-pill {
   display: inline-flex;
   align-items: center;

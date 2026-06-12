@@ -15,7 +15,7 @@ import { environment } from '../../../environments/environment';
 })
 export class UserProfileComponent implements OnInit {
   private readonly maxPhotoSize = 4 * 1024 * 1024;
-  user: any = { name: '', email: '', profile_photo_url: null };
+  user: any = { name: '', email: '', bio: '', profile_photo_url: null };
   passwordData = {
     password: '',
     password_confirmation: ''
@@ -110,6 +110,8 @@ export class UserProfileComponent implements OnInit {
     if (this.user.email?.trim()) {
       form.append('email', this.user.email.trim());
     }
+
+    form.append('bio', this.user.bio || '');
 
     if (this.passwordData.password || this.passwordData.password_confirmation) {
       form.append('password', this.passwordData.password);

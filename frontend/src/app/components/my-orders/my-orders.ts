@@ -90,7 +90,10 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
       return item;
     }
 
-    return item?.nombre || 'Producto';
+    const nestedProduct = item?.producto || item?.product;
+    const name = item?.nombre || item?.name || item?.title || nestedProduct?.nombre || nestedProduct?.name;
+
+    return typeof name === 'string' && name.trim() ? name.trim() : 'Producto';
   }
 
   getProductLine(item: any): string {
@@ -98,11 +101,11 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
       return item;
     }
 
-    const name = item?.nombre || 'Producto';
-    const quantity = item?.cantidad || 1;
+    const name = this.getProductName(item);
+    const quantity = item?.cantidad || item?.quantity || 1;
     const subtotal = item?.subtotal;
 
-    return subtotal !== undefined
+    return subtotal !== undefined && subtotal !== null
       ? `${name} x${quantity} - ${subtotal} Pesos`
       : `${name} x${quantity}`;
   }

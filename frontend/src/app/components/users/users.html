@@ -66,6 +66,11 @@
               {{ user.email }}
             </p>
 
+            <p *ngIf="user.bio" class="user-bio">
+              <strong>Descripcion:</strong>
+              {{ user.bio }}
+            </p>
+
             <p>
               <strong>Fecha de registro:</strong>
               {{ formatDate(user.created_at) }}

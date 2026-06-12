@@ -52,6 +52,7 @@
             <strong>{{ user.name }}</strong>
             <span>{{ user.email }}</span>
             <small>Rol: {{ getRoleLabel() }}</small>
+            <p *ngIf="user.bio" class="profile-bio">{{ user.bio }}</p>
           </div>
         </aside>
 
@@ -65,6 +66,16 @@
             <label>
               Email
               <input type="email" [(ngModel)]="user.email" name="email" />
+            </label>
+
+            <label class="full-width">
+              Descripcion breve
+              <textarea
+                [(ngModel)]="user.bio"
+                name="bio"
+                maxlength="300"
+                placeholder="Cuenta algo corto sobre ti"
+              ></textarea>
             </label>
 
             <label>
