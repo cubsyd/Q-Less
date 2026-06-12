@@ -184,6 +184,8 @@ class PaymentController extends Controller
 
             'email_sent' => $orderResult['email_sent'],
 
+            'email_error' => $orderResult['email_error'],
+
             'preference_id' => $preference['id'] ?? null,
 
             'init_point' => $preference['init_point'] ?? null,
@@ -227,6 +229,8 @@ class PaymentController extends Controller
             'order' => $orderResult['order'],
 
             'email_sent' => $orderResult['email_sent'],
+
+            'email_error' => $orderResult['email_error'],
 
             'already_created' => $orderResult['already_created'],
         ]);
@@ -288,10 +292,12 @@ class PaymentController extends Controller
                 }
 
                 $freshOrder = $existingOrder->fresh();
+                $emailResult = $this->sendOrderEmail($user, $freshOrder);
 
                 return [
                     'order' => $freshOrder,
-                    'email_sent' => $this->sendOrderEmail($user, $freshOrder),
+                    'email_sent' => $emailResult['sent'],
+                    'email_error' => $emailResult['error'],
                     'already_created' => true,
                 ];
             }
@@ -360,14 +366,15 @@ class PaymentController extends Controller
                 'expires_at' => now()->addMinutes(10),
             ]);
 
-            $emailSent = $this->sendOrderEmail($user, $order);
+            $emailResult = $this->sendOrderEmail($user, $order);
 
             CartReservation::where('user_id', $user->id)
                 ->delete();
 
             return [
                 'order' => $order,
-                'email_sent' => $emailSent,
+                'email_sent' => $emailResult['sent'],
+                'email_error' => $emailResult['error'],
                 'already_created' => false,
             ];
         });
@@ -398,6 +405,7 @@ class PaymentController extends Controller
             'order' => $orderResult['order'],
             'order_number' => $orderResult['order']->order_number,
             'email_sent' => $orderResult['email_sent'],
+            'email_error' => $orderResult['email_error'],
             'preference_id' => 'LOCAL-' . $externalReference,
             'init_point' => $url,
             'sandbox_init_point' => $url,
@@ -439,7 +447,7 @@ class PaymentController extends Controller
         }
     }
 
-    private function sendOrderEmail(User $user, Order $order): bool
+    private function sendOrderEmail(User $user, Order $order): array
     {
         try {
             $this->ensureDeliverableMailConfigured();
@@ -451,13 +459,19 @@ class PaymentController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            return false;
+            return [
+                'sent' => false,
+                'error' => $exception->getMessage(),
+            ];
         }
 
         try {
             Mail::to($user->email)->send(new DeliveryCodeMail($order));
 
-            return true;
+            return [
+                'sent' => true,
+                'error' => null,
+            ];
         } catch (\Throwable $exception) {
             Log::warning('No se pudo enviar el correo de pedido creado.', [
                 'order_id' => $order->id,
@@ -466,7 +480,10 @@ class PaymentController extends Controller
                 'error' => $exception->getMessage(),
             ]);
 
-            return false;
+            return [
+                'sent' => false,
+                'error' => $exception->getMessage(),
+            ];
         }
     }
 }
