@@ -134,6 +134,17 @@
   margin: 14px 0 0;
 }
 
+.email-error {
+  color: #8a1f11;
+  background: #fff1ef;
+  border: 1px solid #ffc9c2;
+  border-radius: 8px;
+  padding: 12px 14px;
+  width: min(420px, 100%);
+  margin: 0 0 18px;
+  line-height: 1.45;
+}
+
 @media (max-width: 800px) {
   .verification-page {
     padding: 20px;

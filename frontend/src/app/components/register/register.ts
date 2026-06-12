@@ -286,6 +286,7 @@ export class RegisterComponent {
                   status: 'pending',
                   email: payload.email,
                   sent: res?.email_sent ? '1' : '0',
+                  error: res?.email_error || null,
                 }
               });
               return;

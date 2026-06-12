@@ -15,6 +15,7 @@ export class EmailVerifiedComponent {
   status = 'success';
   email = '';
   emailSent = true;
+  emailError = '';
   resendMessage = '';
   isResending = false;
 
@@ -25,6 +26,7 @@ export class EmailVerifiedComponent {
     this.status = this.route.snapshot.queryParamMap.get('status') || 'success';
     this.email = this.route.snapshot.queryParamMap.get('email') || '';
     this.emailSent = this.route.snapshot.queryParamMap.get('sent') !== '0';
+    this.emailError = this.route.snapshot.queryParamMap.get('error') || '';
   }
 
   get isInvalid(): boolean {
@@ -67,11 +69,15 @@ export class EmailVerifiedComponent {
       next: (response: any) => {
         this.isResending = false;
         this.emailSent = !!response?.email_sent;
-        this.resendMessage = response?.message || 'Correo de verificacion enviado.';
+        this.emailError = response?.email_error || '';
+        this.resendMessage = this.emailSent
+          ? response?.message || 'Correo de verificacion enviado.'
+          : this.emailError || response?.message || 'No se pudo reenviar el correo.';
       },
       error: (error: any) => {
         this.isResending = false;
-        this.resendMessage = error?.error?.message || error?.message || 'No se pudo reenviar el correo.';
+        this.emailError = error?.error?.email_error || '';
+        this.resendMessage = this.emailError || error?.error?.message || error?.message || 'No se pudo reenviar el correo.';
       }
     });
   }

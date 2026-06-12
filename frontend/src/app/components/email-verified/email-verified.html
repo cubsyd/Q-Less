@@ -21,6 +21,10 @@
         Abre el enlace que enviamos a tu correo para activar la cuenta.
       </p>
 
+      <p class="email-error" *ngIf="isPending && !emailSent && emailError">
+        {{ emailError }}
+      </p>
+
       <p class="status-copy" *ngIf="!isPending">
         {{ isInvalid ? 'Solicita un nuevo correo si todavia no puedes entrar.' : 'La verificacion se realizo exitosamente.' }}
       </p>
