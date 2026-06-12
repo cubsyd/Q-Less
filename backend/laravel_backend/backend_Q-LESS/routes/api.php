@@ -33,6 +33,7 @@ Route::post('/favoritos/toggle', [FavoriteProductController::class, 'toggle']);
 Route::post('/payments/preference', [PaymentController::class, 'createPreference']);
 Route::post('/payments/webhook', [PaymentController::class, 'webhook']);
 Route::apiResource('productos', ProductoController::class);
+Route::get('/payments/order/{reference}', [PaymentController::class, 'showOrderByReference']);
 Route::post('/payments/create-order', [PaymentController::class, 'createOrder']);
 Route::get('/orders', [OrderController::class, 'index']);
 Route::get('/orders/user/{userId}', [OrderController::class, 'userOrders']);

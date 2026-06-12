@@ -222,6 +222,33 @@ class PaymentController extends Controller
         ]);
     }
 
+    public function showOrderByReference(Request $request, string $reference)
+    {
+        $data = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+        ]);
+
+        $order = Order::where('user_id', $data['user_id'])
+            ->where('payment_reference', $reference)
+            ->latest()
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No se encontro un pedido para esta referencia de pago.',
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'order' => $order,
+            'order_number' => $order->order_number,
+            'payment_reference' => $order->payment_reference,
+            'payment_status' => $order->payment_status,
+        ]);
+    }
+
     public function webhook(Request $request)
     {
         return response()->json([
