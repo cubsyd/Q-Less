@@ -42,6 +42,10 @@ return [
         'timeout' => env('OPENAI_TIMEOUT', 25),
     ],
 
+    'brevo' => [
+        'api_key' => env('BREVO_API_KEY'),
+    ],
+
     'app_urls' => [
         'backend_url' => env('BACKEND_URL', env('APP_URL', 'http://localhost:8000')),
         'frontend_url' => env('FRONTEND_URL', 'http://localhost:4200'),
