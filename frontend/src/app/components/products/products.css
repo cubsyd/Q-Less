@@ -190,6 +190,53 @@
   color: #2c7a09;
 }
 
+.app-download-card {
+  margin-top: 1.25rem;
+  border-top: 1px solid #edf2e8;
+  padding-top: 1.25rem;
+  text-align: center;
+}
+
+.app-download-logo {
+  width: 76px;
+  height: 76px;
+  border-radius: 18px;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto 0.85rem;
+  box-shadow: 0 8px 18px rgba(75, 130, 18, 0.2);
+}
+
+.app-download-card h3 {
+  margin: 0;
+  color: #1d3323;
+  font-size: 1rem;
+}
+
+.app-download-card p {
+  margin: 0.55rem 0 1rem;
+  color: #5d6a58;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.download-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 42px;
+  background: #6ba308;
+  color: white;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.download-button:hover {
+  background: #4f8304;
+}
+
 .section-head {
   display: flex;
   align-items: center;

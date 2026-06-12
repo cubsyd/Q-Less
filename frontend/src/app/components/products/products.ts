@@ -16,6 +16,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./products.css']
 })
 export class ProductsComponent implements OnInit, OnDestroy {
+  readonly mobileAppDownloadUrl = 'https://github.com/AnderFelipeOrtiz2004/Q-Less/releases/download/v0.2.7-mobile/Q-LESS-v0.2.7-release.apk';
   userName: string | null = '';
   userPhotoUrl: string | null = null;
   productos: any[] = [];
