@@ -31,6 +31,7 @@ interface PaymentPreferenceResponse {
   order?: any;
   order_number?: string;
   email_sent?: boolean;
+  email_error?: string | null;
   preference_id: string;
   init_point: string | null;
   sandbox_init_point: string | null;

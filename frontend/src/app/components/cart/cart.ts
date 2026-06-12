@@ -226,7 +226,7 @@ export class CartComponent implements OnInit, OnDestroy {
         const orderNumber = response.order_number || response.order?.order_number;
         const emailText = response.email_sent
           ? 'Tambien enviamos el correo a la cuenta asociada.'
-          : 'El pedido fue creado; revisa la configuracion SMTP si no llega el correo.';
+          : `El pedido fue creado, pero no se pudo enviar el correo. ${response.email_error || 'Revisa la configuracion SMTP en Railway.'}`;
         const externalReference = response.external_reference || response.order?.payment_reference || null;
 
         this.savePendingPayment(externalReference, orderNumber, emailText);
