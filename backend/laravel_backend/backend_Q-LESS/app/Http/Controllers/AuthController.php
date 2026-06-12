@@ -65,7 +65,7 @@ class AuthController extends Controller
         if ($this->emailVerificationEnabled() && !$isAdmin) {
             $userData['email_verified_at'] = null;
             $userData['email_verification_token'] = Str::random(64);
-            $userData['email_verification_sent_at'] = now();
+            $userData['email_verification_sent_at'] = null;
         } elseif ($this->emailVerificationEnabled()) {
             $userData['email_verified_at'] = now();
             $userData['email_verification_token'] = null;
@@ -76,6 +76,12 @@ class AuthController extends Controller
         $emailResult = $isAdmin || !$this->emailVerificationEnabled()
             ? ['sent' => false, 'error' => null]
             : $this->sendVerificationEmail($user);
+
+        if ($emailResult['sent']) {
+            $user->forceFill([
+                'email_verification_sent_at' => now(),
+            ])->save();
+        }
 
         return response()->json([
             'status' => true,
@@ -222,10 +228,16 @@ class AuthController extends Controller
 
         $user->forceFill([
             'email_verification_token' => Str::random(64),
-            'email_verification_sent_at' => now(),
+            'email_verification_sent_at' => null,
         ])->save();
 
         $emailResult = $this->sendVerificationEmail($user);
+
+        if ($emailResult['sent']) {
+            $user->forceFill([
+                'email_verification_sent_at' => now(),
+            ])->save();
+        }
 
         return response()->json([
             'status' => $emailResult['sent'],
