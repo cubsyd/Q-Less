@@ -40,7 +40,11 @@ export class RegisterComponent {
   }
 
   isValidEmail(email: string): boolean {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  }
+
+  hasValidName(name: string): boolean {
+    return /^[\p{L}\s'-]+$/u.test(name);
   }
 
   get passwordRules() {
@@ -147,20 +151,29 @@ export class RegisterComponent {
 
     let isValid = true;
 
-    if (!this.user.name.trim()) {
+    const name = this.user.name.trim();
+    const email = this.user.email.trim();
+
+    if (!name) {
       this.addError('danger', 'El nombre es requerido');
+      isValid = false;
+    } else if (name.length < 3) {
+      this.addError('danger', 'El nombre debe tener minimo 3 caracteres');
+      isValid = false;
+    } else if (!this.hasValidName(name)) {
+      this.addError('danger', 'El nombre solo puede contener letras y espacios');
       isValid = false;
     }
 
-    if (!this.user.email.trim()) {
+    if (!email) {
 
       this.addError('danger', 'El email es requerido');
 
       isValid = false;
 
-    } else if (!this.isValidEmail(this.user.email)) {
+    } else if (!this.isValidEmail(email)) {
 
-      this.addError('danger', 'Formato de email invalido');
+      this.addError('danger', 'Formato de email invalido. Usa usuario@dominio.com');
 
       isValid = false;
     }

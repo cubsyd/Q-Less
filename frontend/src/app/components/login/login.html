@@ -4,7 +4,7 @@
       <h1 class="logo-title">Q-LESS</h1>
       <div class="underline"></div>
       <p class="description-text">
-        Tu papelería virtual del CBA - SENA. Gestiona tus pedidos de forma rápida y sencilla.
+        Tu papeleria virtual del CBA - SENA. Gestiona tus pedidos de forma rapida y sencilla.
       </p>
     </div>
   </div>
@@ -24,22 +24,38 @@
       <form (ngSubmit)="iniciarSesion()" #loginForm="ngForm" novalidate>
         <div class="input-group">
           <i class="bi bi-person-fill"></i>
-          <input type="email" [(ngModel)]="credentials.email" name="email" placeholder="Correo o número" required>
+          <input type="email" [(ngModel)]="credentials.email" name="email" placeholder="Correo electronico" required>
         </div>
 
-        <div class="input-group">
+        <div class="input-group password-input-group">
           <i class="bi bi-lock-fill"></i>
-          <input type="password" [(ngModel)]="credentials.password" name="password" placeholder="Contraseña" required>
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="credentials.password"
+            name="password"
+            placeholder="Contrasena"
+            required
+          >
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Ocultar contrasena' : 'Ver contrasena'"
+          >
+            <i [class]="showPassword ? 'bi bi-eye' : 'bi bi-eye-slash'"></i>
+          </button>
         </div>
 
-        <button type="submit" class="login-button">Inicia sesión</button>
+        <button type="submit" class="login-button" [disabled]="isLoading">
+          {{ isLoading ? 'Iniciando...' : 'Inicia sesion' }}
+        </button>
 
         <div class="divider">
           <span>O</span>
         </div>
 
         <div class="register-container">
-          <p class="small-text">¿No tienes una cuenta?</p>
+          <p class="small-text">No tienes una cuenta?</p>
           <button type="button" class="register-button" routerLink="/register">
             Crea una cuenta
           </button>

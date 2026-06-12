@@ -169,24 +169,40 @@
 
 .password-strength strong {
   font-size: 0.88rem;
+  min-width: 72px;
+  padding: 0.32rem 0.55rem;
+  border-radius: 999px;
+  text-align: center;
+  line-height: 1;
+  border: 1px solid currentColor;
+  background: #ffffff;
 }
 
-.password-strength.weak .strength-track span,
-.password-strength.weak strong {
+.password-strength.weak .strength-track span {
   background: #dc3545;
+}
+
+.password-strength.weak strong {
   color: #dc3545;
+  background: #fff1f2;
 }
 
-.password-strength.good .strength-track span,
-.password-strength.good strong {
+.password-strength.good .strength-track span {
   background: #ffc107;
-  color: #b77c00;
 }
 
-.password-strength.strong .strength-track span,
-.password-strength.strong strong {
+.password-strength.good strong {
+  color: #b77c00;
+  background: #fff8df;
+}
+
+.password-strength.strong .strength-track span {
   background: #28a745;
+}
+
+.password-strength.strong strong {
   color: #1f7a36;
+  background: #eefaf0;
 }
 
 .password-rules {

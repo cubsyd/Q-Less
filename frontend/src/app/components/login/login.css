@@ -95,6 +95,38 @@
   }
 }
 
+.password-input-group {
+  gap: 0.5rem;
+}
+
+.password-input-group i:first-child {
+  margin-right: 0.35rem;
+}
+
+.password-toggle {
+  border: none;
+  background: transparent;
+  color: #7b858d;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.password-toggle:hover {
+  background: rgba(122, 181, 0, 0.12);
+  color: #557d01;
+}
+
+.password-toggle i {
+  margin: 0;
+  font-size: 1.15rem;
+  color: inherit;
+}
+
 
 .login-button {
   width: 100%;
@@ -109,6 +141,11 @@
   transition: 0.3s;
 
   &:hover { background-color: #618E01; }
+}
+
+.login-button:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
 }
 
 .divider {
