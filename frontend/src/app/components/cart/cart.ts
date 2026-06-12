@@ -22,6 +22,7 @@ export class CartComponent implements OnInit, OnDestroy {
   private countdownIntervalId: number | null = null;
   private cartRefreshIntervalId: number | null = null;
   private paymentWindowCheckIntervalId: number | null = null;
+  private readonly pendingPaymentStorageKey = 'q_less_pending_payment';
 
   constructor(
     private authService: AuthService,
@@ -60,6 +61,8 @@ export class CartComponent implements OnInit, OnDestroy {
     this.cartRefreshIntervalId = window.setInterval(() => {
       this.cartService.syncCurrentUser();
     }, 5000);
+
+    this.resumePendingPayment();
   }
 
   ngOnDestroy(): void {
@@ -224,11 +227,14 @@ export class CartComponent implements OnInit, OnDestroy {
         const emailText = response.email_sent
           ? 'Tambien enviamos el correo a la cuenta asociada.'
           : 'El pedido fue creado; revisa la configuracion SMTP si no llega el correo.';
+        const externalReference = response.external_reference || response.order?.payment_reference || null;
+
+        this.savePendingPayment(externalReference, orderNumber, emailText);
 
         if (paymentWindow) {
           paymentWindow.location.href = paymentUrl;
           this.cartMessage = 'Mercado Pago esta abierto. Completa el pago y cierra esa ventana para ver tu numero de pedido.';
-          this.watchPaymentWindowClose(paymentWindow, orderNumber, emailText);
+          this.watchPaymentWindowClose(paymentWindow, externalReference, orderNumber, emailText);
         } else {
           this.cartMessage = 'Mercado Pago se abrira en esta pestana. Al volver al carrito veras el estado del pago.';
           window.location.href = paymentUrl;
@@ -261,7 +267,12 @@ export class CartComponent implements OnInit, OnDestroy {
     });
   }
 
-  private watchPaymentWindowClose(paymentWindow: Window, orderNumber: string | null, emailText: string): void {
+  private watchPaymentWindowClose(
+    paymentWindow: Window,
+    externalReference: string | null,
+    orderNumber: string | null,
+    emailText: string
+  ): void {
     if (this.paymentWindowCheckIntervalId !== null) {
       window.clearInterval(this.paymentWindowCheckIntervalId);
     }
@@ -278,11 +289,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
       this.isRedirectingToPayment = false;
       this.cartService.syncCurrentUser();
-      this.cartMessage = orderNumber
-        ? `Pedido creado correctamente con el numero de pedido #${orderNumber}. ${emailText}`
-        : `Pedido creado correctamente. ${emailText}`;
-      window.alert(this.cartMessage);
-      this.cdr.detectChanges();
+      this.resolvePaymentOrder(externalReference, orderNumber, emailText, true);
     }, 500);
   }
 
@@ -325,6 +332,7 @@ export class CartComponent implements OnInit, OnDestroy {
 
         if (orderNumber) {
           this.cartMessage = `Pago aprobado en Mercado Pago. Tu pedido #${orderNumber} ya fue creado.`;
+          this.clearPendingPayment();
         }
 
         this.cartService.syncCurrentUser();
@@ -334,6 +342,91 @@ export class CartComponent implements OnInit, OnDestroy {
         console.error('ERROR ACTUALIZANDO PAGO:', error);
       }
     });
+  }
+
+  private resolvePaymentOrder(
+    externalReference: string | null,
+    fallbackOrderNumber: string | null,
+    emailText: string,
+    showAlert = false
+  ): void {
+    const userId = this.authService.getUserId();
+
+    if (!externalReference || !userId) {
+      this.showResolvedOrderMessage(fallbackOrderNumber, emailText, showAlert);
+      return;
+    }
+
+    this.cartMessage = 'Consultando numero de pedido...';
+
+    this.cartService.getPaymentOrder(externalReference, Number(userId)).subscribe({
+      next: (response: any) => {
+        const orderNumber = response?.order_number || response?.order?.order_number || fallbackOrderNumber;
+        this.showResolvedOrderMessage(orderNumber, emailText, showAlert);
+        this.clearPendingPayment();
+        this.cartService.syncCurrentUser();
+      },
+      error: (error) => {
+        console.error('No se pudo consultar el pedido por referencia', error);
+        this.showResolvedOrderMessage(fallbackOrderNumber, emailText, showAlert);
+      }
+    });
+  }
+
+  private showResolvedOrderMessage(orderNumber: string | null, emailText: string, showAlert: boolean): void {
+    this.cartMessage = orderNumber
+      ? `Pedido creado correctamente con el numero de pedido #${orderNumber}. ${emailText}`
+      : `Pedido creado correctamente. ${emailText}`;
+
+    if (showAlert) {
+      window.alert(this.cartMessage);
+    }
+
+    this.cdr.detectChanges();
+  }
+
+  private savePendingPayment(externalReference: string | null, orderNumber: string | null, emailText: string): void {
+    if (!externalReference && !orderNumber) {
+      return;
+    }
+
+    sessionStorage.setItem(this.pendingPaymentStorageKey, JSON.stringify({
+      externalReference,
+      orderNumber,
+      emailText,
+      createdAt: Date.now(),
+    }));
+  }
+
+  private resumePendingPayment(): void {
+    const rawPendingPayment = sessionStorage.getItem(this.pendingPaymentStorageKey);
+
+    if (!rawPendingPayment) {
+      return;
+    }
+
+    try {
+      const pendingPayment = JSON.parse(rawPendingPayment);
+      const ageInMinutes = (Date.now() - Number(pendingPayment.createdAt || 0)) / 60000;
+
+      if (ageInMinutes > 30) {
+        this.clearPendingPayment();
+        return;
+      }
+
+      this.resolvePaymentOrder(
+        pendingPayment.externalReference || null,
+        pendingPayment.orderNumber || null,
+        pendingPayment.emailText || 'El pedido fue creado.',
+        false
+      );
+    } catch {
+      this.clearPendingPayment();
+    }
+  }
+
+  private clearPendingPayment(): void {
+    sessionStorage.removeItem(this.pendingPaymentStorageKey);
   }
 
   logout(): void {

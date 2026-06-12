@@ -186,6 +186,14 @@ export class CartService {
     });
   }
 
+  getPaymentOrder(externalReference: string, userId: number) {
+    return this.http.get(`${this.PAYMENT_URL}/order/${encodeURIComponent(externalReference)}`, {
+      params: {
+        user_id: String(userId),
+      },
+    });
+  }
+
   private tickReservationCountdown(): void {
     const items = this.itemsSubject.value;
 
