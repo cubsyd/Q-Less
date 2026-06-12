@@ -17,6 +17,7 @@ export class CreateProduct implements OnInit {
   categories = [
     "Cuadernos y libretas",
     "Lapices y marcadores",
+    "Lapiceros y esferos",
     "Cartulinas y hojas",
     "Herramientas escolares",
   ];

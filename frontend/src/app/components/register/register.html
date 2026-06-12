@@ -32,11 +32,6 @@
           <input type="email" [(ngModel)]="user.email" name="email" placeholder="Correo electronico" required>
         </div>
 
-        <div class="input-group">
-          <i class="bi bi-telephone"></i>
-          <input type="text" [(ngModel)]="user.telefono" name="telefono" placeholder="Telefono" required>
-        </div>
-
         <div class="input-group select-group">
           <i class="bi bi-person-badge"></i>
           <select [(ngModel)]="user.rol" name="rol" required>
@@ -45,14 +40,56 @@
           </select>
         </div>
 
-        <div class="input-group">
+        <div class="input-group password-input-group">
           <i class="bi bi-lock"></i>
-          <input type="password" [(ngModel)]="user.password" name="password" placeholder="Contrasena" required>
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="user.password"
+            name="password"
+            placeholder="Contrasena"
+            required
+          >
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility('password')"
+            [attr.aria-label]="showPassword ? 'Ocultar contrasena' : 'Ver contrasena'"
+          >
+            <i [class]="showPassword ? 'bi bi-eye' : 'bi bi-eye-slash'"></i>
+          </button>
         </div>
 
-        <div class="input-group">
+        <div class="password-strength" [class]="passwordStrengthClass">
+          <div class="strength-head">
+            <div class="strength-track">
+              <span [style.width]="passwordStrengthWidth"></span>
+            </div>
+            <strong>{{ passwordStrengthLabel }}</strong>
+          </div>
+          <div class="password-rules">
+            <span *ngFor="let rule of passwordRules" [class.passed]="rule.passed">
+              {{ rule.passed ? '✓' : '×' }} {{ rule.label }}
+            </span>
+          </div>
+        </div>
+
+        <div class="input-group password-input-group">
           <i class="bi bi-lock"></i>
-          <input type="password" [(ngModel)]="user.password_confirmation" name="password_confirmation" placeholder="Confirmar contrasena" required>
+          <input
+            [type]="showPasswordConfirmation ? 'text' : 'password'"
+            [(ngModel)]="user.password_confirmation"
+            name="password_confirmation"
+            placeholder="Confirmar contrasena"
+            required
+          >
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="togglePasswordVisibility('confirmation')"
+            [attr.aria-label]="showPasswordConfirmation ? 'Ocultar confirmacion' : 'Ver confirmacion'"
+          >
+            <i [class]="showPasswordConfirmation ? 'bi bi-eye' : 'bi bi-eye-slash'"></i>
+          </button>
         </div>
 
         <button type="submit" class="login-button" [disabled]="isLoading">

@@ -24,6 +24,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     'Favoritos',
     'Cuadernos y libretas',
     'Lapices y marcadores',
+    'Lapiceros y esferos',
     'Cartulinas y hojas',
     'Herramientas escolares'
   ];

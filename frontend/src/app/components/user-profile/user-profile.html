@@ -52,7 +52,6 @@
             <strong>{{ user.name }}</strong>
             <span>{{ user.email }}</span>
             <small>Rol: {{ getRoleLabel() }}</small>
-            <small>{{ user.telefono || 'Sin telefono registrado' }}</small>
           </div>
         </aside>
 
@@ -66,11 +65,6 @@
             <label>
               Email
               <input type="email" [(ngModel)]="user.email" name="email" />
-            </label>
-
-            <label>
-              Telefono
-              <input type="text" [(ngModel)]="user.telefono" name="telefono" />
             </label>
 
             <label>

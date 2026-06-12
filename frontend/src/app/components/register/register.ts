@@ -16,7 +16,6 @@ export class RegisterComponent {
   user = {
     name: '',
     email: '',
-    telefono: '',
     rol: 'aprendiz',
     password: '',
     password_confirmation: ''
@@ -24,6 +23,8 @@ export class RegisterComponent {
 
   errors: { type: string; message: string }[] = [];
   isLoading = false;
+  showPassword = false;
+  showPasswordConfirmation = false;
 
   constructor(
     private authService: AuthService,
@@ -42,8 +43,57 @@ export class RegisterComponent {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  isValidPhone(phone: string): boolean {
-    return /^[0-9+\s()\-]+$/.test(phone);
+  get passwordRules() {
+    const password = this.user.password;
+
+    return [
+      { label: '8+ chars', passed: password.length >= 8 },
+      { label: 'Mayuscula', passed: /[A-Z]/.test(password) },
+      { label: 'Minuscula', passed: /[a-z]/.test(password) },
+      { label: 'Numero', passed: /[0-9]/.test(password) },
+      { label: 'Especial', passed: /[@$!%*?&]/.test(password) },
+    ];
+  }
+
+  get passwordScore(): number {
+    return this.passwordRules.filter(rule => rule.passed).length;
+  }
+
+  get passwordStrengthClass(): string {
+    if (this.passwordScore <= 2) {
+      return 'weak';
+    }
+
+    if (this.passwordScore <= 4) {
+      return 'good';
+    }
+
+    return 'strong';
+  }
+
+  get passwordStrengthLabel(): string {
+    if (this.passwordScore <= 2) {
+      return 'Debil';
+    }
+
+    if (this.passwordScore <= 4) {
+      return 'Buena';
+    }
+
+    return 'Segura';
+  }
+
+  get passwordStrengthWidth(): string {
+    return `${Math.max(12, this.passwordScore * 20)}%`;
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmation'): void {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+      return;
+    }
+
+    this.showPasswordConfirmation = !this.showPasswordConfirmation;
   }
 
   flattenServerErrors(errors: any): string[] {
@@ -112,17 +162,6 @@ export class RegisterComponent {
 
       this.addError('danger', 'Formato de email invalido');
 
-      isValid = false;
-    }
-
-    if (!this.user.telefono.trim()) {
-      this.addError('danger', 'El telefono es requerido');
-      isValid = false;
-    } else if (!this.isValidPhone(this.user.telefono)) {
-      this.addError(
-        'danger',
-        'El telefono solo puede contener numeros, espacios, parentesis, + o -.'
-      );
       isValid = false;
     }
 
@@ -210,7 +249,6 @@ export class RegisterComponent {
     const payload = {
       name: this.user.name.trim(),
       email: this.user.email.trim().toLowerCase(),
-      telefono: this.user.telefono.trim(),
       rol: this.user.rol,
       password: this.user.password,
       password_confirmation: this.user.password_confirmation

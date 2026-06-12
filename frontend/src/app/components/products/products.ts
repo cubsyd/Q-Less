@@ -36,6 +36,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
     'Favoritos',
     'Cuadernos y libretas',
     'Lapices y marcadores',
+    'Lapiceros y esferos',
     'Cartulinas y hojas',
     'Herramientas escolares'
   ];
