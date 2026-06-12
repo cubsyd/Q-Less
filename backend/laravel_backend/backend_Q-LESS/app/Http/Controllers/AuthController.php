@@ -18,7 +18,7 @@ class AuthController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255',
-            'telefono' => 'required|string|min:7|max:30|regex:/^[0-9+\s()-]+$/',
+            'telefono' => 'nullable|string|min:7|max:30|regex:/^[0-9+\s()-]+$/',
             'rol' => 'required|string|in:aprendiz,instructor',
             'password' => [
                 'required',
