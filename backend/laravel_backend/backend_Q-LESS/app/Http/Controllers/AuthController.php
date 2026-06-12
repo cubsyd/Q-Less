@@ -16,7 +16,7 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'min:3', 'max:255', "regex:/^[\\pL\\s'-]+$/u"],
             'email' => 'required|string|email|max:255',
             'telefono' => 'nullable|string|min:7|max:30|regex:/^[0-9+\s()-]+$/',
             'rol' => 'required|string|in:aprendiz,instructor',
@@ -28,6 +28,8 @@ class AuthController extends Controller
                 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/',
             ],
         ], [
+            'name.min' => 'El nombre debe tener minimo 3 caracteres.',
+            'name.regex' => 'El nombre solo puede contener letras y espacios.',
             'password.min' => 'La contrasena debe tener minimo 8 caracteres.',
             'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
             'password.confirmed' => 'Las contrasenas no coinciden.',
@@ -35,7 +37,9 @@ class AuthController extends Controller
             'rol.in' => 'Selecciona si eres aprendiz o instructor.',
         ]);
 
-        $existingUser = User::where('email', $request->email)->first();
+        $email = Str::lower(trim((string) $request->email));
+
+        $existingUser = User::where('email', $email)->first();
 
         if ($existingUser) {
             return response()->json([
@@ -47,11 +51,11 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $isAdmin = $request->email === $this->adminEmail;
+        $isAdmin = $email === $this->adminEmail;
 
         $userData = [
-            'name' => $request->name,
-            'email' => $request->email,
+            'name' => trim((string) $request->name),
+            'email' => $email,
             'telefono' => $request->telefono,
             'rol' => $isAdmin ? 'admin' : $request->rol,
             'password' => Hash::make($request->password),
@@ -78,16 +82,15 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => 'required|string|email|max:255',
             'password' => [
                 'required',
                 'string',
                 'min:8',
-                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/',
+                'max:255',
             ],
         ], [
             'password.min' => 'La contrasena debe tener minimo 8 caracteres.',
-            'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
         ]);
 
         $key = 'login-attempts-' . $request->ip();
@@ -99,7 +102,7 @@ class AuthController extends Controller
             ], 429);
         }
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', Str::lower(trim((string) $request->email)))->first();
 
         if (!$user) {
             RateLimiter::hit($key, 60);
