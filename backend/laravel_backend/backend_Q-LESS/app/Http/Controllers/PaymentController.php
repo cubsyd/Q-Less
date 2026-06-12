@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Mail\DeliveryCodeMail;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
@@ -264,6 +265,7 @@ class PaymentController extends Controller
         string $paymentProvider,
         string $paymentStatus
     ): array {
+        $this->ensureDeliverableMailConfigured();
 
         if ($paymentReference) {
             $existingOrder = Order::where('user_id', $user->id)
@@ -278,85 +280,90 @@ class PaymentController extends Controller
                     ]);
                 }
 
+                $this->sendOrderEmailOrFail($user, $existingOrder->fresh());
+
                 return [
                     'order' => $existingOrder->fresh(),
-                    'email_sent' => false,
+                    'email_sent' => true,
                     'already_created' => true,
                 ];
             }
         }
 
-        $cartItems = CartReservation::with('producto')
-            ->where('user_id', $user->id)
-            ->where('status', 'active')
-            ->where('expires_at', '>', now())
-            ->get();
+        return DB::transaction(function () use ($user, $paymentReference, $paymentProvider, $paymentStatus) {
+            $cartItems = CartReservation::with('producto')
+                ->where('user_id', $user->id)
+                ->where('status', 'active')
+                ->where('expires_at', '>', now())
+                ->lockForUpdate()
+                ->get();
 
-        if ($cartItems->isEmpty()) {
-            abort(response()->json([
-                'status' => false,
-                'message' => 'Carrito vacio.',
-            ], 422));
-        }
+            if ($cartItems->isEmpty()) {
+                abort(response()->json([
+                    'status' => false,
+                    'message' => 'Carrito vacio.',
+                ], 422));
+            }
 
-        if ($cartItems->contains(fn (CartReservation $item) => !$item->producto)) {
-            abort(response()->json([
-                'status' => false,
-                'message' => 'El carrito tiene productos que ya no existen.',
-            ], 422));
-        }
+            if ($cartItems->contains(fn (CartReservation $item) => !$item->producto)) {
+                abort(response()->json([
+                    'status' => false,
+                    'message' => 'El carrito tiene productos que ya no existen.',
+                ], 422));
+            }
 
-        $total = $cartItems->sum(function ($item) {
+            $total = $cartItems->sum(function ($item) {
 
-            return $item->cantidad * $item->producto->precio;
-        });
+                return $item->cantidad * $item->producto->precio;
+            });
 
-        $orderItems = $cartItems->map(function (CartReservation $item) {
-            $quantity = (int) $item->cantidad;
-            $unitPrice = (float) $item->producto->precio;
+            $orderItems = $cartItems->map(function (CartReservation $item) {
+                $quantity = (int) $item->cantidad;
+                $unitPrice = (float) $item->producto->precio;
+
+                return [
+                    'producto_id' => (int) $item->producto->id,
+                    'nombre' => (string) $item->producto->nombre,
+                    'precio_unitario' => $unitPrice,
+                    'cantidad' => $quantity,
+                    'subtotal' => $unitPrice * $quantity,
+                ];
+            })->values()->all();
+
+            $orderNumber = $this->generateOrderNumber();
+
+            $order = Order::create([
+
+                'user_id' => $user->id,
+
+                'order_number' => $orderNumber,
+
+                'total' => $total,
+
+                'items' => $orderItems,
+
+                'status' => 'pendiente',
+
+                'payment_provider' => $paymentProvider,
+
+                'payment_reference' => $paymentReference,
+
+                'payment_status' => $paymentStatus,
+
+                'expires_at' => now()->addMinutes(10),
+            ]);
+
+            $this->sendOrderEmailOrFail($user, $order);
+
+            CartReservation::where('user_id', $user->id)
+                ->delete();
 
             return [
-                'producto_id' => (int) $item->producto->id,
-                'nombre' => (string) $item->producto->nombre,
-                'precio_unitario' => $unitPrice,
-                'cantidad' => $quantity,
-                'subtotal' => $unitPrice * $quantity,
+                'order' => $order,
+                'email_sent' => true,
+                'already_created' => false,
             ];
-        })->values()->all();
-
-        $orderNumber = $this->generateOrderNumber();
-
-        $order = Order::create([
-
-            'user_id' => $user->id,
-
-            'order_number' => $orderNumber,
-
-            'total' => $total,
-
-            'items' => $orderItems,
-
-            'status' => 'pendiente',
-
-            'payment_provider' => $paymentProvider,
-
-            'payment_reference' => $paymentReference,
-
-            'payment_status' => $paymentStatus,
-
-            'expires_at' => now()->addMinutes(10),
-        ]);
-
-        CartReservation::where('user_id', $user->id)
-            ->delete();
-
-        $emailSent = $this->sendOrderEmail($user, $order);
-
-        return [
-            'order' => $order,
-            'email_sent' => $emailSent,
-            'already_created' => false,
-        ];
+        });
     }
 
     private function frontendUrl(string $path): string
@@ -402,21 +409,47 @@ class PaymentController extends Controller
         return $orderNumber;
     }
 
-    private function sendOrderEmail(User $user, Order $order): bool
+    private function ensureDeliverableMailConfigured(): void
     {
-        try {
-            Mail::to($user->email)->send(new DeliveryCodeMail($order));
+        $mailer = (string) config('mail.default');
+        $fromAddress = (string) config('mail.from.address');
 
-            return true;
-        } catch (\Throwable $exception) {
-            Log::warning('No se pudo enviar el correo de pedido creado.', [
-                'order_id' => $order->id,
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'error' => $exception->getMessage(),
-            ]);
-
-            return false;
+        if (in_array($mailer, ['log', 'array'], true)) {
+            throw new \RuntimeException('El correo no esta configurado para entrega real. Usa MAIL_MAILER=smtp, resend, postmark, ses o mailgun.');
         }
+
+        if ($fromAddress === '' || $fromAddress === 'hello@example.com') {
+            throw new \RuntimeException('MAIL_FROM_ADDRESS debe ser un correo real y verificado por el proveedor SMTP.');
+        }
+    }
+
+    private function sendOrderEmailOrFail(User $user, Order $order): void
+    {
+        $lastException = null;
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            try {
+                Mail::to($user->email)->send(new DeliveryCodeMail($order));
+
+                return;
+            } catch (\Throwable $exception) {
+                $lastException = $exception;
+
+                Log::warning('No se pudo enviar el correo de pedido creado.', [
+                    'order_id' => $order->id,
+                    'user_id' => $user->id,
+                    'email' => $user->email,
+                    'attempt' => $attempt,
+                    'error' => $exception->getMessage(),
+                ]);
+
+                usleep(250000);
+            }
+        }
+
+        throw new \RuntimeException(
+            'No se pudo enviar el correo del pedido al usuario. Verifica las variables SMTP de Railway.',
+            previous: $lastException
+        );
     }
 }
