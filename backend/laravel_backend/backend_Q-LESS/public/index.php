@@ -5,25 +5,6 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-$host = $origin ? parse_url($origin, PHP_URL_HOST) : null;
-
-if (
-    is_string($host)
-    && (str_ends_with($host, '.up.railway.app') || str_ends_with($host, '.railway.app'))
-) {
-    header('Access-Control-Allow-Origin: '.$origin);
-    header('Vary: Origin');
-    header('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
-    header('Access-Control-Max-Age: 86400');
-}
-
-if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-    http_response_code(204);
-    exit;
-}
-
 if (file_exists($maintenance = __DIR__.'/../storage/framework/maintenance.php')) {
     require $maintenance;
 }
