@@ -36,7 +36,13 @@ return [
     |
     */
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => array_values(array_unique(array_filter(array_map(
+        'trim',
+        explode(',', env(
+            'CORS_ALLOWED_ORIGINS',
+            env('FRONTEND_URL', 'http://localhost:4200') . ',https://frontend-production-1a74.up.railway.app'
+        ))
+    )))),
 
     /*
     |--------------------------------------------------------------------------
@@ -47,7 +53,10 @@ return [
     |
     */
 
-    'allowed_origins_patterns' => [],
+    'allowed_origins_patterns' => [
+        '#^https://[a-z0-9-]+\.up\.railway\.app$#i',
+        '#^https://[a-z0-9-]+\.railway\.app$#i',
+    ],
 
     /*
     |--------------------------------------------------------------------------
