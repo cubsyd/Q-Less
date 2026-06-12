@@ -118,8 +118,68 @@ class OrderController extends Controller
 
         $data['expires_at_iso'] = $effectiveExpiresAt?->toIso8601String();
         $data['remaining_seconds'] = $remainingSeconds;
+        $data['items'] = $this->normalizeOrderItems($order->items);
+        $data['user'] = $this->formatOrderUser($order->user);
 
         return $data;
+    }
+
+    private function normalizeOrderItems($items): array
+    {
+        if (!is_array($items)) {
+            return [];
+        }
+
+        return collect($items)
+            ->map(function ($item) {
+                if (is_string($item)) {
+                    return [
+                        'nombre' => $item,
+                        'cantidad' => 1,
+                        'subtotal' => null,
+                    ];
+                }
+
+                if (!is_array($item)) {
+                    return null;
+                }
+
+                $product = $item['producto'] ?? $item['product'] ?? null;
+                $name = $item['nombre']
+                    ?? $item['name']
+                    ?? $item['title']
+                    ?? (is_array($product) ? ($product['nombre'] ?? $product['name'] ?? null) : null);
+
+                if (!$name || is_array($name) || is_object($name)) {
+                    return null;
+                }
+
+                return [
+                    'producto_id' => $item['producto_id'] ?? $item['product_id'] ?? null,
+                    'nombre' => (string) $name,
+                    'cantidad' => max(1, (int) ($item['cantidad'] ?? $item['quantity'] ?? 1)),
+                    'precio_unitario' => $item['precio_unitario'] ?? $item['unit_price'] ?? null,
+                    'subtotal' => $item['subtotal'] ?? null,
+                ];
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function formatOrderUser($user): ?array
+    {
+        if (!$user) {
+            return null;
+        }
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'rol' => $user->rol,
+            'bio' => $user->bio,
+        ];
     }
 
     private function effectiveExpiresAt(Order $order): ?Carbon
@@ -130,15 +190,11 @@ class OrderController extends Controller
             return $referenceExpiresAt;
         }
 
-        if ($order->expires_at) {
-            return $order->expires_at;
-        }
-
         if ($order->created_at) {
             return $order->created_at->copy()->addMinutes(self::ORDER_EXPIRATION_MINUTES);
         }
 
-        return null;
+        return $order->expires_at;
     }
 
     private function expiresAtFromPaymentReference(Order $order): ?Carbon

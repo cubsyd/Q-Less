@@ -16,8 +16,8 @@ class User extends Authenticatable
         'email_verified_at',
         'email_verification_token',
         'email_verification_sent_at',
-        'telefono',
         'rol',
+        'bio',
         'profile_photo_path',
         'password',
     ];

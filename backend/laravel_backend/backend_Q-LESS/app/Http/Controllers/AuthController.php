@@ -18,7 +18,6 @@ class AuthController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'min:3', 'max:255', "regex:/^[\\pL\\s'-]+$/u"],
             'email' => 'required|string|email|max:255',
-            'telefono' => 'nullable|string|min:7|max:30|regex:/^[0-9+\s()-]+$/',
             'rol' => 'required|string|in:aprendiz,instructor',
             'password' => [
                 'required',
@@ -33,7 +32,6 @@ class AuthController extends Controller
             'password.min' => 'La contrasena debe tener minimo 8 caracteres.',
             'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
             'password.confirmed' => 'Las contrasenas no coinciden.',
-            'telefono.regex' => 'El telefono solo puede contener numeros, espacios, parentesis, + o -.',
             'rol.in' => 'Selecciona si eres aprendiz o instructor.',
         ]);
 
@@ -56,7 +54,6 @@ class AuthController extends Controller
         $userData = [
             'name' => trim((string) $request->name),
             'email' => $email,
-            'telefono' => $request->telefono,
             'rol' => $isAdmin ? 'admin' : $request->rol,
             'password' => Hash::make($request->password),
         ];
@@ -74,7 +71,7 @@ class AuthController extends Controller
             'message' => $isAdmin
                 ? 'Usuario administrador registrado correctamente.'
                 : 'Usuario registrado correctamente. Ya puedes iniciar sesion.',
-            'user' => $user,
+            'user' => $this->serializeUser($user),
             'email_verification_required' => false,
         ], 201);
     }
@@ -135,7 +132,7 @@ class AuthController extends Controller
             'status' => true,
             'message' => 'Login exitoso',
             'token' => Str::random(64),
-            'user' => $user,
+            'user' => $this->serializeUser($user),
             'role' => $role,
         ]);
     }
@@ -174,5 +171,17 @@ class AuthController extends Controller
         return Schema::hasColumn('users', 'email_verified_at')
             && Schema::hasColumn('users', 'email_verification_token')
             && Schema::hasColumn('users', 'email_verification_sent_at');
+    }
+
+    private function serializeUser(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'rol' => $user->rol,
+            'bio' => $user->bio,
+            'profile_photo_url' => $user->profile_photo_path,
+        ];
     }
 }

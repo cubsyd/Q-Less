@@ -35,7 +35,7 @@ class UserController extends Controller
         $data = $request->validate([
             'name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
-            'telefono' => ['sometimes', 'nullable', 'string', 'min:7', 'max:30', 'regex:/^[0-9+\s()-]+$/'],
+            'bio' => ['sometimes', 'nullable', 'string', 'max:300'],
             'password' => [
                 'nullable',
                 'string',
@@ -50,7 +50,7 @@ class UserController extends Controller
             'password.min' => 'La contrasena debe tener minimo 8 caracteres.',
             'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
             'password.confirmed' => 'Las contrasenas no coinciden.',
-            'telefono.regex' => 'El telefono solo puede contener numeros, espacios, parentesis, + o -.',
+            'bio.max' => 'La descripcion no puede superar 300 caracteres.',
             'photo.image' => 'La foto debe ser una imagen valida.',
             'photo.max' => 'La foto no puede superar 4 MB.',
         ]);
@@ -63,8 +63,8 @@ class UserController extends Controller
             $user->email = trim((string) $data['email']);
         }
 
-        if ($request->has('telefono')) {
-            $user->telefono = $data['telefono'] ?? null;
+        if ($request->has('bio')) {
+            $user->bio = $data['bio'] ?? null;
         }
 
         if (!empty($data['password'])) {
@@ -107,9 +107,8 @@ class UserController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
-            'telefono' => $user->telefono,
             'rol' => $user->rol,
-            'profile_photo_path' => $user->profile_photo_path,
+            'bio' => $user->bio,
             'profile_photo_url' => $this->profilePhotoUrl($user),
             'created_at' => optional($user->created_at)->toISOString(),
             'updated_at' => optional($user->updated_at)->toISOString(),
