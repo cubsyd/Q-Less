@@ -153,7 +153,14 @@ export class LoginComponent {
             this.router.navigate(['/home']);
           }, 1500);
         } else {
-          this.addError('danger', 'Error en la respuesta del servidor. Intenta de nuevo.');
+          const code = String(res?.code || '').toUpperCase();
+          const message = String(res?.message || '');
+
+          if (code === 'USER_NOT_FOUND' || message.toLowerCase().includes('usuario no existe')) {
+            this.setError('danger', 'El correo ingresado no esta registrado. Verifica el email o crea una cuenta nueva.');
+          } else {
+            this.setError('danger', message || 'Error en la respuesta del servidor. Intenta de nuevo.');
+          }
         }
       },
       error: (err: any) => {
