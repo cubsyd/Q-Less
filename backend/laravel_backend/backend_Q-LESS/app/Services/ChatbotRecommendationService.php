@@ -60,20 +60,46 @@ class ChatbotRecommendationService
 
     private function openAiFailureMessage(Throwable $exception): string
     {
-        $message = Str::lower($exception->getMessage());
+        $rawMessage = $this->sanitizeOpenAiError($exception->getMessage());
+        $message = Str::lower($rawMessage);
 
         if (str_contains($message, 'incorrect api key') || str_contains($message, 'invalid api key') || str_contains($message, '401')) {
             return 'La API key de OpenAI no es valida o fue revocada. Crea una nueva key en OpenAI, ponla en OPENAI_API_KEY y reinicia/limpia la configuracion de Laravel.';
         }
 
         if (str_contains($message, 'model') && (str_contains($message, 'does not exist') || str_contains($message, 'not found'))) {
-            return 'El modelo configurado en OPENAI_MODEL no esta disponible para esa API key. Cambia OPENAI_MODEL por un modelo disponible para tu cuenta.';
+            return 'El modelo configurado en OPENAI_MODEL no esta disponible para esa API key. Detalle: ' . $rawMessage;
         }
 
-        return 'El asistente no pudo generar una recomendacion en este momento. Revisa la API key, el modelo o la conexion del servidor.';
+        return 'OpenAI no pudo responder. Detalle: ' . $rawMessage;
     }
 
     private function recommendWithOpenAI(string $message, array $inventory): array
+    {
+        $models = array_values(array_unique(array_filter([
+            $this->openAiModel(),
+            'gpt-4o-mini',
+        ])));
+
+        $lastException = null;
+
+        foreach ($models as $model) {
+            try {
+                return $this->requestOpenAiRecommendation($message, $inventory, $model);
+            } catch (Throwable $exception) {
+                $lastException = $exception;
+
+                Log::warning('OpenAI no respondio con el modelo configurado.', [
+                    'model' => $model,
+                    'error' => $this->sanitizeOpenAiError($exception->getMessage()),
+                ]);
+            }
+        }
+
+        throw $lastException ?? new RuntimeException('OpenAI no respondio correctamente.');
+    }
+
+    private function requestOpenAiRecommendation(string $message, array $inventory, string $model): array
     {
         $response = Http::withToken($this->openAiApiKey())
             ->timeout($this->openAiTimeout())
@@ -83,7 +109,7 @@ class ChatbotRecommendationService
                 'proxy' => '',
             ])
             ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => $this->openAiModel(),
+                'model' => $model,
                 'max_tokens' => 6000,
                 'response_format' => [
                     'type' => 'json_schema',
@@ -110,7 +136,7 @@ class ChatbotRecommendationService
                 ?? $response->json('message')
                 ?? 'OpenAI respondio con error HTTP ' . $response->status();
 
-            throw new RuntimeException($errorMessage);
+            throw new RuntimeException('Modelo ' . $model . ': ' . $errorMessage);
         }
 
         $payload = $response->json();
@@ -127,6 +153,13 @@ class ChatbotRecommendationService
         }
 
         return $decoded;
+    }
+
+    private function sanitizeOpenAiError(string $message): string
+    {
+        $sanitized = preg_replace('/sk-[A-Za-z0-9_\-]+/', 'sk-***', $message) ?? $message;
+
+        return Str::limit($sanitized, 320, '...');
     }
 
     private function openAiApiKey(): string
