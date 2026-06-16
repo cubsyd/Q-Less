@@ -98,8 +98,10 @@ class AuthController extends Controller
             RateLimiter::hit($key, 60);
 
             return response()->json([
+                'status' => false,
+                'code' => 'USER_NOT_FOUND',
                 'message' => 'Usuario no existe',
-            ], 404);
+            ]);
         }
 
         if (!Hash::check($request->password, $user->password)) {
