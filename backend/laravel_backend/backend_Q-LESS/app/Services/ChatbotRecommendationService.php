@@ -17,13 +17,14 @@ class ChatbotRecommendationService
             return $this->buildInstructionNeededResponse($message);
         }
 
-        $apiKey = trim((string) config('services.openai.api_key'));
-        $provider = $apiKey !== ''
-            ? 'openai'
-            : (string) config('services.openai.provider', 'local');
+        $apiKey = $this->openAiApiKey();
+        $provider = $this->openAiProvider($apiKey);
 
         if ($provider !== 'openai' || $apiKey === '') {
-            return $this->recommendLocally($message);
+            $localResponse = $this->recommendLocally($message);
+            $localResponse['ai_provider'] = 'local';
+
+            return $this->normalizeResponseShape($localResponse);
         }
 
         try {
@@ -32,6 +33,7 @@ class ChatbotRecommendationService
             $openAiRecommendation = $this->enforceInventoryTruth($openAiRecommendation, $inventory);
 
             $openAiRecommendation['status'] = true;
+            $openAiRecommendation['ai_provider'] = 'openai';
             $openAiRecommendation['query'] = $message;
             $openAiRecommendation['notes'] = array_values(array_unique(array_merge(
                 $openAiRecommendation['notes'] ?? [],
@@ -48,6 +50,7 @@ class ChatbotRecommendationService
             ]);
 
             $localResponse = $this->recommendLocally($message);
+            $localResponse['ai_provider'] = 'local_fallback';
             $localResponse['notes'][] = $userMessage;
             $localResponse['notes'][] = 'Se uso recomendacion local porque OpenAI no respondio correctamente.';
 
@@ -72,15 +75,15 @@ class ChatbotRecommendationService
 
     private function recommendWithOpenAI(string $message, array $inventory): array
     {
-        $response = Http::withToken(config('services.openai.api_key'))
-            ->timeout((int) config('services.openai.timeout', 60))
+        $response = Http::withToken($this->openAiApiKey())
+            ->timeout($this->openAiTimeout())
             ->acceptJson()
             ->asJson()
             ->withOptions([
                 'proxy' => '',
             ])
             ->post('https://api.openai.com/v1/chat/completions', [
-                'model' => config('services.openai.model', 'gpt-4o-mini'),
+                'model' => $this->openAiModel(),
                 'max_tokens' => 6000,
                 'response_format' => [
                     'type' => 'json_schema',
@@ -124,6 +127,55 @@ class ChatbotRecommendationService
         }
 
         return $decoded;
+    }
+
+    private function openAiApiKey(): string
+    {
+        return trim($this->envString('OPENAI_API_KEY', (string) config('services.openai.api_key', '')));
+    }
+
+    private function openAiProvider(string $apiKey): string
+    {
+        if ($apiKey !== '') {
+            return 'openai';
+        }
+
+        return trim($this->envString('CHATBOT_PROVIDER', (string) config('services.openai.provider', 'local'))) ?: 'local';
+    }
+
+    private function openAiModel(): string
+    {
+        return trim($this->envString('OPENAI_MODEL', (string) config('services.openai.model', 'gpt-4o-mini'))) ?: 'gpt-4o-mini';
+    }
+
+    private function openAiTimeout(): int
+    {
+        $timeout = (int) $this->envString('OPENAI_TIMEOUT', (string) config('services.openai.timeout', 60));
+
+        return max(10, $timeout);
+    }
+
+    private function envString(string $key, string $fallback = ''): string
+    {
+        $value = getenv($key);
+
+        if (is_string($value) && trim($value) !== '') {
+            return $value;
+        }
+
+        $serverValue = $_SERVER[$key] ?? null;
+
+        if (is_string($serverValue) && trim($serverValue) !== '') {
+            return $serverValue;
+        }
+
+        $envValue = $_ENV[$key] ?? null;
+
+        if (is_string($envValue) && trim($envValue) !== '') {
+            return $envValue;
+        }
+
+        return $fallback;
     }
 
     private function decodeJsonObject(string $jsonText): mixed
