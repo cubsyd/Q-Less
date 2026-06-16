@@ -29,7 +29,7 @@ class ChatbotRecommendationService
 
         try {
             $inventory = $this->inventorySnapshot();
-            $openAiRecommendation = $this->recommendWithOpenAI($message, $inventory);
+            $openAiRecommendation = $this->recommendWithOpenAI($message, $this->compactInventoryForOpenAI($inventory));
             $openAiRecommendation = $this->enforceInventoryTruth($openAiRecommendation, $inventory);
 
             $openAiRecommendation['status'] = true;
@@ -110,7 +110,7 @@ class ChatbotRecommendationService
             ])
             ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $model,
-                'max_tokens' => 6000,
+                'max_tokens' => 1800,
                 'response_format' => [
                     'type' => 'json_schema',
                     'json_schema' => [
@@ -354,6 +354,23 @@ class ChatbotRecommendationService
                     'image_path' => $product->image_path,
                 ];
             })
+            ->values()
+            ->all();
+    }
+
+    private function compactInventoryForOpenAI(array $inventory): array
+    {
+        return collect($inventory)
+            ->take(120)
+            ->map(fn (array $product) => [
+                'id' => (int) ($product['id'] ?? 0),
+                'nombre' => Str::limit((string) ($product['nombre'] ?? ''), 80, ''),
+                'descripcion' => Str::limit((string) ($product['descripcion'] ?? ''), 140, ''),
+                'precio' => (float) ($product['precio'] ?? 0),
+                'stock' => (int) ($product['stock'] ?? 0),
+                'categoria' => Str::limit((string) ($product['categoria'] ?? ''), 70, ''),
+                'image_path' => null,
+            ])
             ->values()
             ->all();
     }
