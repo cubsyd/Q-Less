@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChatbotConversation;
+use App\Models\ChatbotMessage;
 use App\Models\User;
 use App\Services\ChatbotRecommendationService;
 use Illuminate\Http\Request;
@@ -66,8 +67,8 @@ class ChatbotController extends Controller
 
         $conversations = ChatbotConversation::query()
             ->where('user_id', $userId)
-            ->with('messages')
             ->orderByDesc('updated_at')
+            ->limit(50)
             ->get()
             ->map(fn (ChatbotConversation $conversation) => $this->conversationSummary($conversation));
 
@@ -124,15 +125,37 @@ class ChatbotController extends Controller
 
     private function conversationSummary(ChatbotConversation $conversation): array
     {
-        $lastMessage = $conversation->messages->last();
+        $lastMessage = ChatbotMessage::query()
+            ->where('chatbot_conversation_id', $conversation->id)
+            ->select('role', 'text', 'reply', 'created_at', 'id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->first();
 
         return [
             'id' => $conversation->id,
             'title' => $conversation->title,
             'updatedAt' => optional($conversation->updated_at)->toISOString(),
-            'preview' => $lastMessage?->text
-                ?? ($lastMessage?->reply['summary'] ?? 'Conversacion con la IA'),
+            'preview' => $this->messagePreview($lastMessage),
         ];
+    }
+
+    private function messagePreview(?ChatbotMessage $message): string
+    {
+        if (!$message) {
+            return 'Conversacion con la IA';
+        }
+
+        if (is_string($message->text) && trim($message->text) !== '') {
+            return Str::limit($message->text, 160);
+        }
+
+        $reply = is_array($message->reply) ? $message->reply : [];
+        $summary = $reply['summary'] ?? $reply['project_title'] ?? null;
+
+        return is_string($summary) && trim($summary) !== ''
+            ? Str::limit($summary, 160)
+            : 'Conversacion con la IA';
     }
 
     private function conversationPayload(ChatbotConversation $conversation): array
