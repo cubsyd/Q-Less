@@ -33,6 +33,24 @@
             Aqui apareceran los pedidos de los usuarios.
           </p>
         </div>
+
+        <div class="order-search">
+          <input
+            type="search"
+            placeholder="Buscar pedido #"
+            [(ngModel)]="orderSearchTerm"
+            aria-label="Buscar pedido por numero"
+          />
+
+          <button
+            *ngIf="orderSearchTerm"
+            type="button"
+            (click)="clearOrderSearch()"
+            aria-label="Limpiar busqueda"
+          >
+            Limpiar
+          </button>
+        </div>
       </div>
 
       <p class="orders-message" *ngIf="ordersMessage">
@@ -41,7 +59,11 @@
 
       <div class="orders-list" *ngIf="!isLoadingOrders || pedidos.length > 0">
 
-        <div class="order-card" *ngFor="let pedido of pedidos">
+        <p class="orders-message" *ngIf="!isLoadingOrders && pedidos.length > 0 && filteredPedidos.length === 0">
+          No encontramos pedidos con ese numero.
+        </p>
+
+        <div class="order-card" *ngFor="let pedido of filteredPedidos">
 
           <div class="order-info">
 

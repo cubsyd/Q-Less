@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.js';
@@ -8,7 +9,7 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-orders',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './orders.html',
   styleUrls: ['./orders.css']
 })
@@ -17,6 +18,7 @@ export class OrdersComponent implements OnInit, OnDestroy {
   userName: string | null = '';
 
   pedidos: any[] = [];
+  orderSearchTerm = '';
   isLoadingOrders = false;
   ordersMessage = '';
   deletingOrders = new Set<number>();
@@ -138,6 +140,22 @@ export class OrdersComponent implements OnInit, OnDestroy {
     const name = item?.nombre || item?.name || item?.title || nestedProduct?.nombre || nestedProduct?.name;
 
     return typeof name === 'string' && name.trim() ? name.trim() : 'Producto';
+  }
+
+  get filteredPedidos(): any[] {
+    const term = this.orderSearchTerm.trim().replace(/^#/, '').toLowerCase();
+
+    if (!term) {
+      return this.pedidos;
+    }
+
+    return this.pedidos.filter((pedido) =>
+      String(pedido?.order_number || '').toLowerCase().includes(term)
+    );
+  }
+
+  clearOrderSearch(): void {
+    this.orderSearchTerm = '';
   }
 
   getProductLine(item: any): string {

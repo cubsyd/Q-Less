@@ -78,6 +78,10 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
 .section-head {
 margin-bottom: 1.5rem;
+display: flex;
+align-items: flex-start;
+justify-content: space-between;
+gap: 1rem;
 }
 
 .section-head h2 {
@@ -88,6 +92,41 @@ color: #333;
 .section-head p {
 margin: 0.35rem 0 0;
 color: #6b6b6b;
+}
+
+.order-search {
+display: flex;
+align-items: center;
+gap: 0.5rem;
+margin-left: auto;
+min-width: 320px;
+}
+
+.order-search input {
+width: 100%;
+min-height: 42px;
+border: 1px solid #d7e5c4;
+border-radius: 8px;
+padding: 0 0.9rem;
+font: inherit;
+color: #1d3323;
+outline: none;
+}
+
+.order-search input:focus {
+border-color: #82c91e;
+box-shadow: 0 0 0 3px rgba(130, 201, 30, 0.18);
+}
+
+.order-search button {
+min-height: 42px;
+border: 0;
+border-radius: 8px;
+padding: 0 0.85rem;
+background: #eef7e4;
+color: #2c7a09;
+font-weight: 700;
+cursor: pointer;
 }
 
 .orders-list {
@@ -223,6 +262,15 @@ padding: 1rem;
 
 .orders-content {
 padding: 1rem;
+}
+
+.section-head {
+flex-direction: column;
+}
+
+.order-search {
+width: 100%;
+min-width: 0;
 }
 
 .order-card {
