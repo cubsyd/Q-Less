@@ -6,7 +6,7 @@
     <nav class="main-nav">
       <a routerLink="/home">Inicio</a>
       <a routerLink="/productos">Productos</a>
-      <a *ngIf="!isAdmin" routerLink="/chatbot">ChatBot</a>
+      <a *ngIf="!isAdmin" routerLink="/chatbot">Q-bot</a>
       <a *ngIf="!isAdmin" routerLink="/mis-pedidos">Mis pedidos</a>
       <a *ngIf="!isAdmin" routerLink="/mi-perfil" class="nav-profile-link" aria-label="Mi perfil" title="Mi perfil">
         <img *ngIf="userPhotoUrl" [src]="userPhotoUrl" alt="Foto de perfil" />
