@@ -30,6 +30,10 @@ export class LoginComponent {
     this.errors.push({ type, message });
   }
 
+  setError(type: string, message: string): void {
+    this.errors = [{ type, message }];
+  }
+
   validateForm(): boolean {
     this.clearErrors();
     let isValid = true;
@@ -88,6 +92,10 @@ export class LoginComponent {
   }
 
   getServerErrorMessages(error: any): string[] {
+    if (typeof error?.error === 'string' && error.error.trim()) {
+      return [error.error.trim()];
+    }
+
     const serverErrors = error?.error?.errors;
     const messages = this.flattenServerErrors(serverErrors);
 
@@ -102,13 +110,22 @@ export class LoginComponent {
   }
 
   isEmailNotRegisteredError(error: any): boolean {
-    const message = String(error?.error?.message || error?.message || '').toLowerCase();
+    const message = String(
+      error?.error?.message ||
+      (typeof error?.error === 'string' ? error.error : '') ||
+      error?.message ||
+      ''
+    ).toLowerCase();
+
     return (
       error?.status === 404 ||
       message.includes('usuario no existe') ||
+      message.includes('user not found') ||
       message.includes('no esta registrado') ||
+      message.includes('no está registrado') ||
       message.includes('email no existe') ||
-      message.includes('correo no existe')
+      message.includes('correo no existe') ||
+      message.includes('correo no registrado')
     );
   }
 
@@ -141,34 +158,33 @@ export class LoginComponent {
       },
       error: (err: any) => {
         this.isLoading = false;
-        console.error('Error:', err);
 
         if (this.isEmailNotRegisteredError(err)) {
-          this.addError('danger', 'El email no esta registrado. Quieres crear una cuenta?');
+          this.setError('danger', 'El correo ingresado no esta registrado. Verifica el email o crea una cuenta nueva.');
           return;
         }
 
         if (err?.status === 401) {
-          this.addError('danger', 'Email o contrasena incorrectos. Verifica tus credenciales.');
+          this.setError('danger', 'Email o contrasena incorrectos. Verifica tus credenciales.');
         } else if (err?.status === 422) {
           const messages = this.getServerErrorMessages(err);
           if (messages.length > 0) {
-            messages.forEach((message) => this.addError('danger', message));
+            this.errors = messages.map((message) => ({ type: 'danger', message }));
           } else {
-            this.addError('danger', 'Email o contrasena incorrectos. Intenta de nuevo.');
+            this.setError('danger', 'Email o contrasena incorrectos. Intenta de nuevo.');
           }
         } else if (err?.status === 429) {
-          this.addError('danger', 'Demasiados intentos fallidos. Intenta en unos minutos.');
+          this.setError('danger', 'Demasiados intentos fallidos. Intenta en unos minutos.');
         } else if (err?.status === 0) {
-          this.addError('danger', 'No se pudo conectar al servidor. Verifica tu conexion de internet.');
+          this.setError('danger', 'No se pudo conectar al servidor. Verifica tu conexion de internet.');
         } else if (err?.status === 500) {
-          this.addError('danger', 'Error del servidor. Intenta mas tarde.');
+          this.setError('danger', 'Error del servidor. Intenta mas tarde.');
         } else {
           const messages = this.getServerErrorMessages(err);
           if (messages.length > 0) {
-            messages.forEach((message) => this.addError('danger', message));
+            this.errors = messages.map((message) => ({ type: 'danger', message }));
           } else {
-            this.addError('danger', 'Error al iniciar sesion. Intenta de nuevo.');
+            this.setError('danger', 'Error al iniciar sesion. Intenta de nuevo.');
           }
         }
       }
