@@ -37,9 +37,9 @@ export class ChatConversationsComponent implements OnInit {
       this.message = this.conversations.length
         ? ''
         : 'Aun no tienes conversaciones guardadas con la IA.';
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cargando conversaciones', error);
-      this.message = 'No pude cargar tus conversaciones en este momento.';
+      this.message = error?.message || 'No pude cargar tus conversaciones en este momento.';
     } finally {
       this.cdr.detectChanges();
     }
@@ -79,7 +79,13 @@ export class ChatConversationsComponent implements OnInit {
   }
 
   getDate(value: string): string {
-    return new Date(value).toLocaleString('es-CO', {
+    const date = new Date(value);
+
+    if (!value || Number.isNaN(date.getTime())) {
+      return 'Fecha no disponible';
+    }
+
+    return date.toLocaleString('es-CO', {
       dateStyle: 'medium',
       timeStyle: 'short',
     });
