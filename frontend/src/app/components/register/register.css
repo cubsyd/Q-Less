@@ -260,6 +260,123 @@
   background-color: #557d01;
 }
 
+.login-button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.login-button:disabled:hover {
+  background-color: #7AB500;
+}
+
+.terms-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin: 0.2rem 0 0.75rem;
+  color: #4d5964;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.terms-check input {
+  width: 18px;
+  height: 18px;
+  margin-top: 0.1rem;
+  accent-color: #7AB500;
+  flex: 0 0 auto;
+}
+
+.terms-link {
+  border: none;
+  background: transparent;
+  color: #557d01;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.terms-link:hover {
+  color: #2f4d00;
+}
+
+.terms-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(15, 23, 42, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.terms-modal {
+  width: min(620px, 100%);
+  max-height: min(82vh, 720px);
+  overflow: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  padding: 1.5rem;
+  text-align: left;
+  border: 1px solid #d7e5c4;
+}
+
+.terms-modal h2 {
+  margin: 0 0 1rem;
+  color: #1f3312;
+  font-size: 1.35rem;
+}
+
+.terms-content {
+  display: grid;
+  gap: 0.85rem;
+  color: #4b5563;
+  line-height: 1.55;
+  font-size: 0.96rem;
+}
+
+.terms-content p {
+  margin: 0;
+}
+
+.terms-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.35rem;
+}
+
+.btn-secondary,
+.btn-accept {
+  border: none;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #eef2f7;
+  color: #334155;
+}
+
+.btn-accept {
+  background: #7AB500;
+  color: #ffffff;
+}
+
+.btn-secondary:hover {
+  background: #e2e8f0;
+}
+
+.btn-accept:hover {
+  background: #557d01;
+}
+
 
 .divider {
   margin: 20px 0;
@@ -459,6 +576,15 @@
     padding: 0.85rem 1rem;
     margin-bottom: 0.75rem;
     font-size: 0.9rem;
+  }
+
+  .terms-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn-secondary,
+  .btn-accept {
+    width: 100%;
   }
 }
 

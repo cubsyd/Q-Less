@@ -92,7 +92,21 @@
           </button>
         </div>
 
-        <button type="submit" class="login-button" [disabled]="isLoading">
+        <label class="terms-check">
+          <input
+            type="checkbox"
+            name="acceptedDataPolicy"
+            [(ngModel)]="acceptedDataPolicy"
+          />
+          <span>
+            Acepto los
+            <button type="button" class="terms-link" (click)="openDataPolicyModal()">
+              terminos de uso y tratamiento de datos personales
+            </button>
+          </span>
+        </label>
+
+        <button type="submit" class="login-button" [disabled]="isLoading || !acceptedDataPolicy">
           {{ isLoading ? 'Registrando...' : 'Registrarse' }}
         </button>
 
@@ -108,5 +122,41 @@
         </div>
       </form>
     </div>
+  </div>
+
+  <div class="terms-modal-backdrop" *ngIf="showDataPolicyModal">
+    <section class="terms-modal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+      <h2 id="termsTitle">Terminos de uso y tratamiento de datos personales</h2>
+
+      <div class="terms-content">
+        <p>
+          Al crear una cuenta en Q-LESS autorizas el uso de tus datos personales para la gestion de usuarios,
+          pedidos, carrito, historial de compras, foto de perfil, conversaciones con Q-bot y comunicacion
+          relacionada con el servicio de papeleria virtual.
+        </p>
+
+        <p>
+          La informacion registrada sera usada unicamente para permitir el funcionamiento del sistema,
+          validar tu identidad dentro de la plataforma, administrar pedidos y mejorar la experiencia de uso.
+          Q-LESS no solicita datos sensibles innecesarios ni comparte tu informacion con terceros ajenos al
+          servicio, salvo cuando sea requerido para procesos operativos como pagos, soporte o cumplimiento legal.
+        </p>
+
+        <p>
+          Como usuario te comprometes a ingresar informacion veraz, proteger tus credenciales de acceso y usar
+          la plataforma de forma responsable. Puedes solicitar la actualizacion o eliminacion de tu informacion
+          desde las opciones de perfil disponibles en el sistema.
+        </p>
+      </div>
+
+      <div class="terms-actions">
+        <button type="button" class="btn-secondary" (click)="closeDataPolicyModal()">
+          Cerrar
+        </button>
+        <button type="button" class="btn-accept" (click)="acceptDataPolicy()">
+          Aceptar
+        </button>
+      </div>
+    </section>
   </div>
 </div>

@@ -25,6 +25,8 @@ export class RegisterComponent {
   isLoading = false;
   showPassword = false;
   showPasswordConfirmation = false;
+  acceptedDataPolicy = false;
+  showDataPolicyModal = false;
 
   constructor(
     private authService: AuthService,
@@ -98,6 +100,19 @@ export class RegisterComponent {
     }
 
     this.showPasswordConfirmation = !this.showPasswordConfirmation;
+  }
+
+  openDataPolicyModal(): void {
+    this.showDataPolicyModal = true;
+  }
+
+  closeDataPolicyModal(): void {
+    this.showDataPolicyModal = false;
+  }
+
+  acceptDataPolicy(): void {
+    this.acceptedDataPolicy = true;
+    this.closeDataPolicyModal();
   }
 
   flattenServerErrors(errors: any): string[] {
@@ -243,6 +258,15 @@ export class RegisterComponent {
       this.addError(
         'danger',
         'Las contrasenas no coinciden'
+      );
+
+      isValid = false;
+    }
+
+    if (!this.acceptedDataPolicy) {
+      this.addError(
+        'danger',
+        'Debes aceptar los terminos de uso y el tratamiento de datos personales para crear tu cuenta.'
       );
 
       isValid = false;
