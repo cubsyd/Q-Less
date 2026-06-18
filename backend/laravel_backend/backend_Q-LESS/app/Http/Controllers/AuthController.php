@@ -108,8 +108,10 @@ class AuthController extends Controller
             RateLimiter::hit($key, 60);
 
             return response()->json([
+                'status' => false,
+                'code' => 'INVALID_CREDENTIALS',
                 'message' => 'Contrasena incorrecta',
-            ], 401);
+            ]);
         }
 
         RateLimiter::clear($key);
