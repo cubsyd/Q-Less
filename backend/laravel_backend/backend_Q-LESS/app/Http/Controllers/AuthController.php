@@ -101,7 +101,7 @@ class AuthController extends Controller
                 'status' => false,
                 'code' => 'USER_NOT_FOUND',
                 'message' => 'Usuario no existe',
-            ]);
+            ], 200);
         }
 
         if (!Hash::check($request->password, $user->password)) {
@@ -111,7 +111,7 @@ class AuthController extends Controller
                 'status' => false,
                 'code' => 'INVALID_CREDENTIALS',
                 'message' => 'Contrasena incorrecta',
-            ]);
+            ], 200);
         }
 
         RateLimiter::clear($key);
