@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -19,19 +19,27 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   clearErrors(): void {
     this.errors = [];
+    this.refreshView();
   }
 
   addError(type: string, message: string): void {
     this.errors.push({ type, message });
+    this.refreshView();
   }
 
   setError(type: string, message: string): void {
     this.errors = [{ type, message }];
+    this.refreshView();
+  }
+
+  refreshView(): void {
+    this.cdr.detectChanges();
   }
 
   validateForm(): boolean {
@@ -136,6 +144,7 @@ export class LoginComponent {
 
     this.isLoading = true;
     this.clearErrors();
+    this.refreshView();
 
     const payload = {
       email: this.credentials.email.trim().toLowerCase(),
@@ -145,6 +154,8 @@ export class LoginComponent {
     this.authService.login(payload).subscribe({
       next: (res: any) => {
         this.isLoading = false;
+        this.refreshView();
+
         if (res?.status === true && res?.token) {
           this.authService.saveUserSession(res.user, res?.role || res?.user?.rol || 'usuario');
           this.authService.saveToken(res.token);
@@ -167,6 +178,7 @@ export class LoginComponent {
       },
       error: (err: any) => {
         this.isLoading = false;
+        this.refreshView();
 
         if (this.isEmailNotRegisteredError(err)) {
           this.setError('danger', 'El correo ingresado no esta registrado. Verifica el email o crea una cuenta nueva.');

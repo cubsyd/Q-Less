@@ -15,7 +15,7 @@
         <img src="https://img.icons8.com/?size=100&id=7820&format=png&color=FFFFFF" alt="Carrito Q-LESS" class="cart-icon-img">
       </div>
 
-      <div *ngIf="errors.length > 0" class="alerts-container">
+      <div *ngIf="errors.length > 0" class="alerts-container" aria-live="assertive">
         <div *ngFor="let alert of errors" [ngClass]="'alert alert-' + alert.type" role="alert">
           {{ alert.message }}
         </div>
