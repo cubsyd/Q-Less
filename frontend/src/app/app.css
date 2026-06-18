@@ -1,0 +1,15 @@
+.connection-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: #fff3cd;
+  color: #7a4b00;
+  border-bottom: 1px solid #f3d27a;
+  box-shadow: 0 8px 18px rgba(122, 75, 0, 0.16);
+  padding: 0.85rem 1rem;
+  text-align: center;
+  font-weight: 700;
+  line-height: 1.35;
+}

@@ -158,6 +158,8 @@ export class LoginComponent {
 
           if (code === 'USER_NOT_FOUND' || message.toLowerCase().includes('usuario no existe')) {
             this.setError('danger', 'El correo ingresado no esta registrado. Verifica el email o crea una cuenta nueva.');
+          } else if (code === 'INVALID_CREDENTIALS' || message.toLowerCase().includes('contrasena incorrecta')) {
+            this.setError('danger', 'Email o contrasena incorrectos. Verifica tus credenciales.');
           } else {
             this.setError('danger', message || 'Error en la respuesta del servidor. Intenta de nuevo.');
           }

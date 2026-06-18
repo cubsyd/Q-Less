@@ -1,1 +1,5 @@
+<div class="connection-banner" *ngIf="connectionMessage$ | async as connectionMessage">
+  {{ connectionMessage }}
+</div>
+
 <router-outlet></router-outlet>
