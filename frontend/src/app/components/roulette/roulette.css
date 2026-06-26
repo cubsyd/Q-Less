@@ -221,6 +221,8 @@
 .wheel-label {
   position: absolute;
   z-index: 1;
+  top: 50%;
+  left: 50%;
   width: 118px;
   color: white;
   font-size: 0.86rem;
@@ -229,54 +231,39 @@
   text-align: center;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
   pointer-events: none;
+  transform: translate(-50%, -50%) rotate(var(--label-angle)) translateY(-145px);
 }
 
 .label-top {
-  top: 54px;
-  left: 50%;
-  transform: translateX(-50%);
+  --label-angle: 22.5deg;
 }
 
 .label-top-right {
-  top: 115px;
-  right: 58px;
-  transform: rotate(-16deg);
+  --label-angle: 67.5deg;
 }
 
 .label-right {
-  top: 50%;
-  right: 24px;
-  transform: translateY(-50%);
+  --label-angle: 112.5deg;
 }
 
 .label-bottom-right {
-  right: 58px;
-  bottom: 115px;
-  transform: rotate(16deg);
+  --label-angle: 157.5deg;
 }
 
 .label-bottom {
-  bottom: 54px;
-  left: 50%;
-  transform: translateX(-50%);
+  --label-angle: 202.5deg;
 }
 
 .label-bottom-left {
-  bottom: 115px;
-  left: 58px;
-  transform: rotate(-16deg);
+  --label-angle: 247.5deg;
 }
 
 .label-left {
-  top: 50%;
-  left: 24px;
-  transform: translateY(-50%);
+  --label-angle: 292.5deg;
 }
 
 .label-top-left {
-  top: 115px;
-  left: 58px;
-  transform: rotate(16deg);
+  --label-angle: 337.5deg;
 }
 
 .wheel-center {
@@ -349,16 +336,8 @@
   .wheel-label {
     width: 86px;
     font-size: 0.68rem;
+    transform: translate(-50%, -50%) rotate(var(--label-angle)) translateY(-92px);
   }
-
-  .label-top { top: 36px; }
-  .label-top-right { top: 72px; right: 34px; }
-  .label-right { right: 12px; }
-  .label-bottom-right { right: 34px; bottom: 72px; }
-  .label-bottom { bottom: 36px; }
-  .label-bottom-left { bottom: 72px; left: 34px; }
-  .label-left { left: 12px; }
-  .label-top-left { top: 72px; left: 34px; }
 
   .wheel-center {
     width: 86px;
