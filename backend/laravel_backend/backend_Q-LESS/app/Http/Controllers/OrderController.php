@@ -159,7 +159,11 @@ class OrderController extends Controller
                     'nombre' => (string) $name,
                     'cantidad' => max(1, (int) ($item['cantidad'] ?? $item['quantity'] ?? 1)),
                     'precio_unitario' => $item['precio_unitario'] ?? $item['unit_price'] ?? null,
+                    'precio_original' => $item['precio_original'] ?? null,
                     'subtotal' => $item['subtotal'] ?? null,
+                    'descuento' => $item['descuento'] ?? $item['discount_amount'] ?? 0,
+                    'discount_label' => $item['discount_label'] ?? null,
+                    'discount_percent' => $item['discount_percent'] ?? null,
                 ];
             })
             ->filter()

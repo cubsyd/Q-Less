@@ -14,9 +14,14 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
+use App\Services\RouletteRewardService;
 
 class PaymentController extends Controller
 {
+    public function __construct(private RouletteRewardService $rouletteRewardService)
+    {
+    }
+
     public function createPreference(Request $request)
     {
         $data = $request->validate([
@@ -60,16 +65,26 @@ class PaymentController extends Controller
             ], 422);
         }
 
-        $items = $cartItems->map(function (CartReservation $reservation) {
+        $reward = $this->rouletteRewardService->activeForUser($user->id);
+
+        $items = $cartItems->map(function (CartReservation $reservation) use ($reward) {
 
             $product = $reservation->producto;
+            $quantity = (int) $reservation->cantidad;
+            $pricing = $this->rouletteRewardService->applyToLine((float) $product->precio, $quantity, $reward);
+            $title = (string) $product->nombre;
+
+            if ($pricing['discount_label']) {
+                $title .= ' - ' . $pricing['discount_label'];
+            }
+
             $item = [
                 'id' => (string) $product->id,
-                'title' => (string) $product->nombre,
+                'title' => $title,
                 'description' => (string) ($product->descripcion ?? 'Producto Q-LESS'),
-                'quantity' => (int) $reservation->cantidad,
+                'quantity' => 1,
                 'currency_id' => config('services.mercadopago.currency', 'COP'),
-                'unit_price' => (float) $product->precio,
+                'unit_price' => (float) $pricing['subtotal'],
             ];
 
             if (is_string($product->image_path) && str_starts_with($product->image_path, 'http')) {
@@ -325,21 +340,33 @@ class PaymentController extends Controller
                 ], 422));
             }
 
-            $total = $cartItems->sum(function ($item) {
+            $reward = $this->rouletteRewardService->activeForUser($user->id);
 
-                return $item->cantidad * $item->producto->precio;
+            $total = $cartItems->sum(function ($item) use ($reward) {
+                $pricing = $this->rouletteRewardService->applyToLine(
+                    (float) $item->producto->precio,
+                    (int) $item->cantidad,
+                    $reward
+                );
+
+                return $pricing['subtotal'];
             });
 
-            $orderItems = $cartItems->map(function (CartReservation $item) {
+            $orderItems = $cartItems->map(function (CartReservation $item) use ($reward) {
                 $quantity = (int) $item->cantidad;
                 $unitPrice = (float) $item->producto->precio;
+                $pricing = $this->rouletteRewardService->applyToLine($unitPrice, $quantity, $reward);
 
                 return [
                     'producto_id' => (int) $item->producto->id,
                     'nombre' => (string) $item->producto->nombre,
-                    'precio_unitario' => $unitPrice,
+                    'precio_unitario' => (float) $pricing['unit_price'],
+                    'precio_original' => (float) $pricing['original_unit_price'],
                     'cantidad' => $quantity,
-                    'subtotal' => $unitPrice * $quantity,
+                    'subtotal' => (float) $pricing['subtotal'],
+                    'descuento' => (float) $pricing['discount_amount'],
+                    'discount_label' => $pricing['discount_label'],
+                    'discount_percent' => $pricing['discount_percent'],
                 ];
             })->values()->all();
 
@@ -370,6 +397,8 @@ class PaymentController extends Controller
 
             CartReservation::where('user_id', $user->id)
                 ->delete();
+
+            $this->rouletteRewardService->consumeForUser($user->id);
 
             return [
                 'order' => $order,

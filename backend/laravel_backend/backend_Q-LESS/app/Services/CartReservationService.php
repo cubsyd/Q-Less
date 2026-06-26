@@ -17,6 +17,10 @@ class CartReservationService
     private const STATUS_PURCHASED = 'purchased';
     private const RESERVATION_MINUTES = 5;
 
+    public function __construct(private RouletteRewardService $rouletteRewardService)
+    {
+    }
+
     public function cleanupExpiredReservations(): void
     {
         if (!$this->reservationsTableExists()) {
@@ -60,8 +64,10 @@ class CartReservationService
 
         $this->cleanupExpiredReservations();
 
+        $reward = $this->rouletteRewardService->activeForUser($userId);
+
         $items = $this->activeReservationsForUser($userId)
-            ->map(fn (CartReservation $reservation) => $this->formatReservation($reservation))
+            ->map(fn (CartReservation $reservation) => $this->formatReservation($reservation, $reward))
             ->values()
             ->all();
 
@@ -315,19 +321,27 @@ class CartReservationService
             ->values();
     }
 
-    private function formatReservation(CartReservation $reservation): array
+    private function formatReservation(CartReservation $reservation, $reward = null): array
     {
         $product = $reservation->producto;
         $remainingSeconds = max(0, now()->diffInSeconds($reservation->expires_at, false));
         $remainingSeconds = (int) floor($remainingSeconds);
+        $price = (float) $product->precio;
+        $quantity = (int) $reservation->cantidad;
+        $pricing = $this->rouletteRewardService->applyToLine($price, $quantity, $reward);
 
         return [
             'id' => (int) $product->id,
             'nombre' => (string) $product->nombre,
-            'precio' => (float) $product->precio,
+            'precio' => (float) $pricing['unit_price'],
+            'precio_original' => (float) $pricing['original_unit_price'],
+            'subtotal' => (float) $pricing['subtotal'],
+            'descuento' => (float) $pricing['discount_amount'],
+            'discount_label' => $pricing['discount_label'],
+            'discount_percent' => $pricing['discount_percent'],
             'image_path' => $product->image_path,
             'product_images' => $product->product_images ?: ($product->image_path ? [$product->image_path] : []),
-            'cantidad' => (int) $reservation->cantidad,
+            'cantidad' => $quantity,
             'stock_available' => (int) $product->stock,
             'expires_at' => $reservation->expires_at?->toIso8601String(),
             'remaining_seconds' => $remainingSeconds,
@@ -337,7 +351,7 @@ class CartReservationService
     private function buildCartResponse(array $items): array
     {
         $count = array_sum(array_map(fn (array $item) => $item['cantidad'], $items));
-        $total = array_sum(array_map(fn (array $item) => $item['precio'] * $item['cantidad'], $items));
+        $total = array_sum(array_map(fn (array $item) => $item['subtotal'] ?? ($item['precio'] * $item['cantidad']), $items));
 
         return [
             'status' => true,

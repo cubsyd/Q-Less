@@ -9,6 +9,7 @@ use App\Http\Controllers\FavoriteProductController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\RouletteController;
 use App\Http\Controllers\UserController;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -26,6 +27,8 @@ Route::patch('/carrito/{userId}/{productId}/quantity', [CartController::class, '
 Route::delete('/carrito/{userId}/{productId}', [CartController::class, 'remove']);
 Route::delete('/carrito/{userId}', [CartController::class, 'clear']);
 Route::post('/carrito/checkout', [CartController::class, 'checkout']);
+Route::get('/roulette/active/{userId}', [RouletteController::class, 'active']);
+Route::post('/roulette/spin', [RouletteController::class, 'spin']);
 Route::get('/favoritos/{userId}', [FavoriteProductController::class, 'index']);
 Route::post('/favoritos/toggle', [FavoriteProductController::class, 'toggle']);
 Route::post('/payments/preference', [PaymentController::class, 'createPreference']);
