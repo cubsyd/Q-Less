@@ -33,7 +33,7 @@ class RouletteRewardService
 
         if ($activeReward) {
             throw ValidationException::withMessages([
-            'ruleta' => 'Ya usaste la ruleta recientemente. Espera 10 minutos para volver a girar.',
+                'ruleta' => 'Ya usaste la ruleta recientemente. Espera 10 minutos para volver a girar.',
             ]);
         }
 
@@ -113,17 +113,20 @@ class RouletteRewardService
             'label' => $reward->label,
             'discount_percent' => $reward->discount_percent,
             'expires_at' => $reward->expires_at?->toIso8601String(),
+            'remaining_seconds' => $reward->expires_at
+                ? max(0, $reward->expires_at->getTimestamp() - now()->getTimestamp())
+                : 0,
         ];
     }
 
     private function choosePrize(): array
     {
         $prizes = [
-            ['type' => 'percent_discount', 'label' => '10% de descuento', 'discount_percent' => 10, 'weight' => 35],
-            ['type' => 'percent_discount', 'label' => '15% de descuento', 'discount_percent' => 15, 'weight' => 20],
-            ['type' => 'percent_discount', 'label' => '20% de descuento', 'discount_percent' => 20, 'weight' => 12],
-            ['type' => 'two_for_one', 'label' => '2x1 en productos del carrito', 'weight' => 18],
-            ['type' => 'no_prize', 'label' => 'Intentalo la proxima vez', 'weight' => 15],
+            ['type' => 'no_prize', 'label' => 'Intentalo la proxima vez', 'weight' => 55],
+            ['type' => 'percent_discount', 'label' => '10% de descuento', 'discount_percent' => 10, 'weight' => 25],
+            ['type' => 'percent_discount', 'label' => '15% de descuento', 'discount_percent' => 15, 'weight' => 12],
+            ['type' => 'percent_discount', 'label' => '20% de descuento', 'discount_percent' => 20, 'weight' => 5],
+            ['type' => 'two_for_one', 'label' => '2x1 en productos del carrito', 'weight' => 3],
         ];
 
         $ticket = random_int(1, array_sum(array_column($prizes, 'weight')));
