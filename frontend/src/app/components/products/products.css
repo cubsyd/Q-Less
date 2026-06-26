@@ -1,9 +1,9 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #82c91e;
+  background: var(--sena-page-gradient);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #1d3323;
+  color: var(--sena-ink);
 }
 
 .products-wrapper {
@@ -24,7 +24,7 @@
 
 .brand h1 {
   margin: 0;
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 1.8rem;
   letter-spacing: 2px;
 }
@@ -36,7 +36,7 @@
 
 .main-nav a {
   text-decoration: none;
-  color: #457520;
+  color: var(--sena-deep);
   font-weight: 600;
 }
 
@@ -81,7 +81,7 @@
   min-width: 22px;
   height: 22px;
   border-radius: 999px;
-  background: #6ba308;
+  background: var(--sena-button-gradient);
   color: white;
   display: inline-flex;
   align-items: center;
@@ -114,7 +114,7 @@
 
 .btn-create,
 .btn-add {
-  background: #6ba308;
+  background: var(--sena-button-gradient);
   color: white;
 }
 
@@ -199,8 +199,8 @@
 
 .collection-item.active {
   background: #eef8d9;
-  border-color: #82c91e;
-  color: #2c7a09;
+  border-color: var(--sena-lime);
+  color: var(--sena-green);
 }
 
 .app-download-card {
@@ -222,7 +222,7 @@
 
 .app-download-card h3 {
   margin: 0;
-  color: #1d3323;
+  color: var(--sena-ink);
   font-size: 1rem;
 }
 
@@ -239,7 +239,7 @@
   justify-content: center;
   width: 100%;
   min-height: 42px;
-  background: #6ba308;
+  background: var(--sena-button-gradient);
   color: white;
   border-radius: 8px;
   text-decoration: none;
@@ -309,7 +309,7 @@
   border: none;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 1.5rem;
   font-weight: 800;
   line-height: 1;
@@ -352,7 +352,7 @@
 
 .product-price {
   margin: 0 0 0.75rem;
-  color: #2c7a09;
+  color: var(--sena-green);
   font-weight: 700;
 }
 

@@ -1,9 +1,9 @@
 :host {
 display: block;
 min-height: 100vh;
-background: #82c91e;
+background: var(--sena-page-gradient);
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-color: #1d3323;
+color: var(--sena-ink);
 }
 
 .orders-wrapper {
@@ -24,7 +24,7 @@ border-radius: 0 0 16px 16px;
 
 .brand h1 {
 margin: 0;
-color: #2c7a09;
+color: var(--sena-green);
 font-size: 1.8rem;
 letter-spacing: 2px;
 }
@@ -36,14 +36,14 @@ gap: 1.25rem;
 
 .main-nav a {
 text-decoration: none;
-color: #457520;
+color: var(--sena-deep);
 font-weight: 600;
 transition: 0.3s;
 }
 
 .main-nav a:hover,
 .active-link {
-color: #2c7a09;
+color: var(--sena-green);
 }
 
 .btn-logout {
@@ -114,7 +114,7 @@ box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 
 .order-info h3 {
 margin: 0 0 0.75rem;
-color: #2c7a09;
+color: var(--sena-green);
 }
 
 .order-info p {
@@ -123,7 +123,7 @@ color: #555;
 }
 
 .order-info strong {
-color: #2c7a09;
+color: var(--sena-green);
 }
 
 .expire-text {
@@ -147,7 +147,7 @@ border-radius: 8px;
 }
 
 .order-item span {
-color: #2c7a09;
+color: var(--sena-green);
 font-weight: 700;
 }
 

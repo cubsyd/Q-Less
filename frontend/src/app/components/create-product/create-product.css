@@ -1,9 +1,9 @@
 :host {
 display: block;
 min-height: 100vh;
-background: #82C91E;
+background: var(--sena-page-gradient);
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-color: #1d3323;
+color: var(--sena-ink);
 width: 100%;
 margin: 0;
 padding: 0;
@@ -27,14 +27,14 @@ border-radius: 0 0 16px 16px;
 
 .brand h1 {
 margin: 0;
-color: #2c7a09;
+color: var(--sena-green);
 font-size: 1.8rem;
 }
 
 .main-nav a {
 margin-right: 1rem;
 text-decoration: none;
-color: #457520;
+color: var(--sena-deep);
 font-weight: 600;
 }
 
@@ -62,7 +62,7 @@ background: #c82333;
 .create-content {
 flex: 1;
 padding: 2rem;
-background: #82C91E;
+background: var(--sena-page-gradient);
 margin: 0;
 }
 
@@ -120,7 +120,7 @@ transition: border-color 0.3s;
 .form-group input[type="number"]:focus,
 .form-group textarea:focus {
 outline: none;
-border-color: #82C91E;
+border-color: var(--sena-lime);
 box-shadow: 0 0 0 3px rgba(130, 201, 30, 0.1);
 }
 
@@ -223,7 +223,7 @@ min-width: 150px;
 }
 
 .btn-cancel {
-background-color: #6ba308;
+background-color: var(--sena-green);
 color: white;
 }
 
@@ -232,7 +232,7 @@ background-color: #5a9107;
 }
 
 .btn-create {
-background-color: #6ba308;
+background-color: var(--sena-green);
 color: white;
 }
 
@@ -340,7 +340,7 @@ font-size: 1rem;
 min-width: 120px;
 border: none;
 border-radius: 8px;
-background: #6ba308;
+background: var(--sena-button-gradient);
 color: white;
 padding: 0.8rem 1.2rem;
 font-weight: 700;

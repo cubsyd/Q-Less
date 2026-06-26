@@ -11,7 +11,7 @@
   display: flex;
   width: 100%;
   height: 100vh;
-  background-color: #618E01; 
+  background: var(--sena-page-gradient); 
 }
 
 .section {
@@ -62,7 +62,7 @@
 .profile-circle {
   width: 90px;
   height: 90px;
-  background-color: #7AB500;
+  background: var(--sena-button-gradient);
   border-radius: 50%;
   display: flex;
   justify-content: center;
@@ -87,7 +87,7 @@
 }
 
 .input-group i {
-  color: #7AB500;
+  color: var(--sena-bright);
   font-size: 1.2rem;
   margin-right: 12px;
 }
@@ -235,8 +235,8 @@
   content: "";
   width: 0.55rem;
   height: 0.55rem;
-  border-right: 2px solid #7AB500;
-  border-bottom: 2px solid #7AB500;
+  border-right: 2px solid var(--sena-bright);
+  border-bottom: 2px solid var(--sena-bright);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -245,7 +245,7 @@
 .login-button {
   width: 100%;
   padding: 15px;
-  background-color: #7AB500;
+  background: var(--sena-button-gradient);
   color: white;
   border: none;
   border-radius: 12px;
@@ -266,7 +266,7 @@
 }
 
 .login-button:disabled:hover {
-  background-color: #7AB500;
+  background: var(--sena-button-gradient);
 }
 
 .terms-check {
@@ -284,7 +284,7 @@
   width: 18px;
   height: 18px;
   margin-top: 0.1rem;
-  accent-color: #7AB500;
+  accent-color: var(--sena-bright);
   flex: 0 0 auto;
 }
 
@@ -365,7 +365,7 @@
 }
 
 .btn-accept {
-  background: #7AB500;
+  background: var(--sena-bright);
   color: #ffffff;
 }
 
@@ -413,8 +413,8 @@
   width: 100%;
   padding: 12px;
   background-color: transparent;
-  color: #7AB500;
-  border: 2px solid #7AB500;
+  color: var(--sena-bright);
+  border: 2px solid var(--sena-bright);
   border-radius: 12px;
   font-weight: bold;
   cursor: pointer;
@@ -422,7 +422,7 @@
 }
 
 .register-button:hover {
-  background-color: #7AB500;
+  background: var(--sena-button-gradient);
   color: white;
 }
 
@@ -490,7 +490,7 @@
     flex-direction: column;
     height: auto;
     min-height: 100vh;
-    background-color: #618E01;
+    background: var(--sena-page-gradient);
   }
 
   .section {
@@ -501,7 +501,7 @@
   .left-section {
     padding: 2rem 1.5rem;
     text-align: center;
-    background-color: #618E01;
+    background: var(--sena-page-gradient);
   }
 
   .text-content {

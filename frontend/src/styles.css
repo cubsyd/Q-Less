@@ -1,3 +1,25 @@
+:root {
+  --sena-deep: #12421f;
+  --sena-green: #1f7a1f;
+  --sena-bright: #39a935;
+  --sena-lime: #82c91e;
+  --sena-mint: #dff5c6;
+  --sena-soft: #f4faec;
+  --sena-gold: #f5c542;
+  --sena-ink: #17351f;
+  --sena-muted: #5d6a58;
+  --sena-page-gradient:
+    radial-gradient(circle at 12% 12%, rgba(223, 245, 198, 0.88) 0, rgba(223, 245, 198, 0) 28%),
+    linear-gradient(135deg, #12421f 0%, #1f7a1f 34%, #65b80f 72%, #a9df55 100%);
+  --sena-card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 252, 238, 0.96));
+  --sena-header-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 249, 226, 0.98));
+  --sena-button-gradient: linear-gradient(135deg, #247c24 0%, #62b500 100%);
+  --sena-button-gradient-hover: linear-gradient(135deg, #185e21 0%, #4c9700 100%);
+  --sena-outline: rgba(57, 169, 53, 0.26);
+  --sena-shadow: 0 18px 45px rgba(18, 66, 31, 0.18);
+  --sena-soft-shadow: 0 8px 24px rgba(18, 66, 31, 0.12);
+}
+
 /* You can add global styles to this file, and also import other style files */
 
 * {
@@ -70,7 +92,7 @@ a[class*='btn']:focus-visible,
 .main-nav a:hover,
 .main-nav a.active-link {
   background-color: rgba(130, 201, 30, 0.14);
-  color: #2c7a09;
+  color: var(--sena-green);
 }
 
 .main-nav .nav-profile-link {
@@ -81,7 +103,7 @@ a[class*='btn']:focus-visible,
   border: 2px solid rgba(44, 122, 9, 0.22);
   border-radius: 999px;
   background: #eef7e4;
-  color: #2c7a09;
+  color: var(--sena-green);
   display: inline-grid;
   place-items: center;
   overflow: hidden;
@@ -98,7 +120,7 @@ a[class*='btn']:focus-visible,
 }
 
 .main-nav .nav-profile-link.active-link {
-  border-color: #2c7a09;
+  border-color: var(--sena-green);
   box-shadow: 0 0 0 3px rgba(130, 201, 30, 0.2);
 }
 
@@ -119,7 +141,7 @@ a[class*='btn']:focus-visible,
 
 .main-nav a[href="/mi-perfil"]:not(.nav-profile-link)::before {
   content: "U";
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 0.78rem;
   font-weight: 800;
   line-height: 1;
@@ -148,8 +170,127 @@ html, body {
 }
 
 body {
-  background-color: #82C91E; /* Verde Q-LESS para evitar espacios en blanco */
+  background: var(--sena-page-gradient);
+  background-attachment: fixed;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-header {
+  background: var(--sena-header-gradient) !important;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  box-shadow: var(--sena-soft-shadow) !important;
+  backdrop-filter: blur(10px);
+}
+
+.brand h1,
+.section-title,
+.section-head h2,
+.summary-panel h3 {
+  color: var(--sena-deep) !important;
+}
+
+.cart-panel,
+.summary-panel,
+.productos-section,
+.sidebar-colecciones,
+.collection-panel,
+.app-download-card,
+.orders-panel,
+.users-panel,
+.profile-card,
+.chat-main,
+.chat-sidebar,
+.chatbot-main,
+.roulette-panel,
+.form-card,
+.login-card {
+  background: var(--sena-card-gradient) !important;
+  border: 1px solid rgba(181, 222, 144, 0.52);
+  box-shadow: var(--sena-shadow) !important;
+}
+
+.btn-add,
+.btn-create,
+.btn-pay,
+.btn-shop,
+.download-button,
+.spin-button,
+.login-button,
+.btn-accept,
+.details-add,
+.send-button,
+.new-chat-button {
+  background: var(--sena-button-gradient) !important;
+  color: white !important;
+  box-shadow: 0 8px 18px rgba(31, 122, 31, 0.22);
+}
+
+.btn-add:hover:not(:disabled),
+.btn-create:hover,
+.btn-pay:hover:not(:disabled),
+.btn-shop:hover,
+.download-button:hover,
+.spin-button:hover:not(:disabled),
+.login-button:hover:not(:disabled),
+.btn-accept:hover,
+.details-add:hover:not(:disabled),
+.send-button:hover:not(:disabled),
+.new-chat-button:hover {
+  background: var(--sena-button-gradient-hover) !important;
+}
+
+.product-card,
+.cart-item,
+.order-card,
+.user-card,
+.conversation-card,
+.reward-card,
+.details-grid div {
+  background: linear-gradient(145deg, #ffffff 0%, #f6fbef 100%) !important;
+  border-color: rgba(183, 222, 149, 0.72) !important;
+  box-shadow: 0 10px 25px rgba(18, 66, 31, 0.08);
+}
+
+.collection-item.active,
+.main-nav a:hover,
+.main-nav a.active-link {
+  background: linear-gradient(135deg, rgba(223, 245, 198, 0.95), rgba(185, 231, 117, 0.56)) !important;
+  color: var(--sena-deep) !important;
+}
+
+.chatbot-wrapper,
+.chat-wrapper,
+.profile-wrapper,
+.users-wrapper,
+.orders-wrapper,
+.my-orders-wrapper,
+.create-wrapper,
+.edit-wrapper,
+.home-wrapper,
+.products-wrapper,
+.cart-wrapper,
+.roulette-wrapper {
+  background: transparent !important;
+}
+
+.sidebar,
+.chat-sidebar,
+.profile-sidebar {
+  background: linear-gradient(180deg, rgba(247, 252, 241, 0.98), rgba(226, 244, 206, 0.96)) !important;
+  border-color: rgba(178, 223, 136, 0.72) !important;
+}
+
+.chat-messages,
+.profile-main,
+.users-content,
+.orders-content,
+.my-orders-content,
+.create-content,
+.edit-content,
+.cart-content,
+.roulette-content,
+.content-section {
+  background: transparent !important;
 }
 
 .details-backdrop {
@@ -184,7 +325,7 @@ body {
   border: none;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
-  color: #1d3323;
+  color: var(--sena-ink);
   display: grid;
   place-items: center;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
@@ -214,7 +355,7 @@ body {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   background: #eef8d9;
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 0.82rem;
   font-weight: 800;
 }
@@ -226,12 +367,12 @@ body {
 }
 
 .details-content h2 {
-  color: #1d3323;
+  color: var(--sena-ink);
   font-size: 1.65rem;
 }
 
 .details-price {
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 1.35rem;
   font-weight: 900;
 }
@@ -257,7 +398,7 @@ body {
 }
 
 .details-grid strong {
-  color: #1d3323;
+  color: var(--sena-ink);
 }
 
 .details-description {
@@ -271,7 +412,7 @@ body {
   height: 52px;
   border: none;
   border-radius: 10px;
-  background: #6ba308;
+  background: var(--sena-green);
   color: white;
   padding: 0;
   font-weight: 800;

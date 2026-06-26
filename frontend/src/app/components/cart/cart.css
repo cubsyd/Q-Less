@@ -1,9 +1,9 @@
 :host {
   display: block;
   min-height: 100vh;
-  background: #82c91e;
+  background: var(--sena-page-gradient);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #1d3323;
+  color: var(--sena-ink);
 }
 
 .cart-wrapper {
@@ -24,7 +24,7 @@
 
 .brand h1 {
   margin: 0;
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 1.8rem;
   letter-spacing: 2px;
 }
@@ -36,12 +36,12 @@
 
 .main-nav a {
   text-decoration: none;
-  color: #457520;
+  color: var(--sena-deep);
   font-weight: 600;
 }
 
 .active-link {
-  color: #2c7a09;
+  color: var(--sena-green);
 }
 
 .btn-logout,
@@ -73,7 +73,7 @@
 
 .btn-pay,
 .btn-shop {
-  background: #6ba308;
+  background: var(--sena-button-gradient);
   color: white;
 }
 
@@ -159,7 +159,7 @@
   border: none;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.9);
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 1.35rem;
   font-weight: 800;
   line-height: 1;
@@ -211,7 +211,7 @@
 }
 
 .discount-line {
-  color: #2c7a09 !important;
+  color: var(--sena-green) !important;
   font-weight: 800;
 }
 
@@ -234,7 +234,7 @@
   height: 32px;
   border-radius: 8px;
   background: #e8f3d3;
-  color: #2c7a09;
+  color: var(--sena-green);
   font-weight: 800;
   cursor: pointer;
 }
@@ -265,7 +265,7 @@
 
 .summary-row.total {
   font-size: 1.08rem;
-  color: #2c7a09;
+  color: var(--sena-green);
 }
 
 .summary-products {
@@ -309,7 +309,7 @@
 }
 
 .summary-product-info span {
-  color: #2c7a09;
+  color: var(--sena-green);
   font-weight: 700;
 }
 
@@ -318,7 +318,7 @@
 }
 
 .summary-product-price strong {
-  color: #2c7a09;
+  color: var(--sena-green);
   white-space: nowrap;
 }
 

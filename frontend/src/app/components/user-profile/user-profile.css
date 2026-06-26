@@ -41,13 +41,13 @@
 }
 
 .avatar-preview span {
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 2rem;
   font-weight: 800;
 }
 
 .photo-button {
-  background: #2c7a09;
+  background: var(--sena-green);
   color: white;
   border-radius: 8px;
   padding: 0.7rem 1rem;
@@ -64,7 +64,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  color: #457520;
+  color: var(--sena-deep);
   max-width: 100%;
 }
 
@@ -94,7 +94,7 @@
 }
 
 .profile-form label {
-  color: #2c7a09;
+  color: var(--sena-green);
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
@@ -106,7 +106,7 @@
   padding: 0.75rem;
   border-radius: 8px;
   border: 1px solid #d7e5c4;
-  color: #1d3323;
+  color: var(--sena-ink);
   font: inherit;
 }
 
@@ -138,7 +138,7 @@
 .btn-secondary {
   border: 1px solid #d7e5c4;
   background: #f8fbf2;
-  color: #2c7a09;
+  color: var(--sena-green);
 }
 
 .btn-danger {
@@ -173,7 +173,7 @@
 
 .confirm-dialog h3 {
   margin: 0 0 0.5rem;
-  color: #1d3323;
+  color: var(--sena-ink);
 }
 
 .confirm-dialog p {

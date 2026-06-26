@@ -35,7 +35,7 @@
 }
 
 .empty-avatar span {
-  color: #2c7a09;
+  color: var(--sena-green);
   font-size: 1.35rem;
   font-weight: 800;
 }
@@ -65,7 +65,7 @@
   align-items: center;
   border-radius: 999px;
   background: #e7f5d1;
-  color: #2c7a09;
+  color: var(--sena-green);
   padding: 0.25rem 0.55rem;
   font-size: 0.72rem;
   font-weight: 800;
