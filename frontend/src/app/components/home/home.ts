@@ -45,6 +45,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   updatingFavoriteIds = new Set<number>();
   selectedProduct: any | null = null;
   activeReward: RouletteReward | null = null;
+  private rewardCountdownIntervalId: number | null = null;
 
   constructor(
     private authService: AuthService,
@@ -87,6 +88,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.stopRewardExpirationWatcher();
   }
 
   loadProducts(): void {
@@ -402,13 +404,65 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.rouletteService.getActiveReward().subscribe({
       next: (response) => {
         this.activeReward = response.reward;
+        this.startRewardExpirationWatcher();
         this.cdr.detectChanges();
       },
       error: () => {
         this.activeReward = null;
+        this.stopRewardExpirationWatcher();
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private startRewardExpirationWatcher(): void {
+    this.stopRewardExpirationWatcher();
+
+    if (!this.activeReward) {
+      return;
+    }
+
+    this.rewardCountdownIntervalId = window.setInterval(() => {
+      if (!this.activeReward) {
+        this.stopRewardExpirationWatcher();
+        return;
+      }
+
+      const remainingSeconds = this.resolveRewardRemainingSeconds(this.activeReward);
+
+      if (remainingSeconds <= 0) {
+        this.activeReward = null;
+        this.cartMessage = 'Tu cupon de ruleta expiro. Los precios volvieron a su valor normal.';
+        this.stopRewardExpirationWatcher();
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
+
+  private stopRewardExpirationWatcher(): void {
+    if (this.rewardCountdownIntervalId !== null) {
+      window.clearInterval(this.rewardCountdownIntervalId);
+      this.rewardCountdownIntervalId = null;
+    }
+  }
+
+  private resolveRewardRemainingSeconds(reward: RouletteReward): number {
+    if (Number.isFinite(reward.remaining_seconds)) {
+      reward.remaining_seconds = Math.max(0, Number(reward.remaining_seconds) - 1);
+      return reward.remaining_seconds;
+    }
+
+    if (!reward.expires_at) {
+      return 0;
+    }
+
+    const expiresAt = new Date(reward.expires_at).getTime();
+
+    if (Number.isNaN(expiresAt)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
   }
 
   openProductDetails(product: any): void {

@@ -10,6 +10,7 @@ export interface RouletteReward {
   label: string;
   discount_percent?: number | null;
   expires_at?: string | null;
+  remaining_seconds?: number;
 }
 
 @Injectable({

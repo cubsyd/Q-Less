@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.js';
@@ -11,20 +11,24 @@ import { RouletteReward, RouletteService } from '../../services/roulette.service
   templateUrl: './roulette.html',
   styleUrls: ['./roulette.css']
 })
-export class RouletteComponent implements OnInit {
+export class RouletteComponent implements OnInit, OnDestroy {
   activeReward: RouletteReward | null = null;
+  remainingSeconds = 0;
   message = '';
   isSpinning = false;
   rotation = 0;
   userPhotoUrl: string | null = null;
+  private countdownIntervalId: number | null = null;
 
   readonly prizes = [
+    'Intentalo despues',
+    '10% descuento',
+    'Intentalo despues',
+    '15% descuento',
+    'Intentalo despues',
+    '20% descuento',
     '10% descuento',
     '2x1',
-    '15% descuento',
-    'Intentalo luego',
-    '10% descuento',
-    '20% descuento',
   ];
 
   constructor(
@@ -44,6 +48,10 @@ export class RouletteComponent implements OnInit {
     this.loadNavProfile();
   }
 
+  ngOnDestroy(): void {
+    this.stopCountdown();
+  }
+
   spin(): void {
     if (this.isSpinning || this.activeReward) {
       return;
@@ -58,6 +66,7 @@ export class RouletteComponent implements OnInit {
       this.rouletteService.spin().subscribe({
         next: (response) => {
           this.activeReward = response.reward;
+          this.startCountdown();
           this.message = response.reward.prize_type === 'no_prize'
             ? 'Esta vez no hubo premio. Podras volver a girar en 10 minutos.'
             : `Ganaste ${response.reward.label}. Se aplicara automaticamente en el carrito y al pagar.`;
@@ -78,22 +87,14 @@ export class RouletteComponent implements OnInit {
   }
 
   getRewardExpiry(): string {
-    if (!this.activeReward?.expires_at) {
-      return '10 minutos';
+    if (this.remainingSeconds <= 0) {
+      return '0:00';
     }
 
-    const date = new Date(this.activeReward.expires_at);
+    const minutes = Math.floor(this.remainingSeconds / 60);
+    const seconds = this.remainingSeconds % 60;
 
-    if (Number.isNaN(date.getTime())) {
-      return '10 minutos';
-    }
-
-    return date.toLocaleString('es-CO', {
-      day: '2-digit',
-      month: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
 
   logout(): void {
@@ -114,6 +115,7 @@ export class RouletteComponent implements OnInit {
     this.rouletteService.getActiveReward().subscribe({
       next: (response) => {
         this.activeReward = response.reward;
+        this.startCountdown();
         this.message = response.reward
           ? response.reward.prize_type === 'no_prize'
             ? 'Ya giraste hace poco. Podras intentarlo otra vez cuando termine el tiempo de espera.'
@@ -126,6 +128,57 @@ export class RouletteComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private startCountdown(): void {
+    this.stopCountdown();
+
+    if (!this.activeReward) {
+      this.remainingSeconds = 0;
+      return;
+    }
+
+    this.remainingSeconds = this.resolveRemainingSeconds(this.activeReward);
+
+    this.countdownIntervalId = window.setInterval(() => {
+      this.remainingSeconds = Math.max(0, this.remainingSeconds - 1);
+
+      if (this.remainingSeconds === 0) {
+        const expiredWasNoPrize = this.activeReward?.prize_type === 'no_prize';
+        this.activeReward = null;
+        this.message = expiredWasNoPrize
+          ? 'Ya puedes volver a girar la ruleta.'
+          : 'Tu cupon expiro. Los precios volvieron a su valor normal.';
+        this.stopCountdown();
+      }
+
+      this.cdr.detectChanges();
+    }, 1000);
+  }
+
+  private stopCountdown(): void {
+    if (this.countdownIntervalId !== null) {
+      window.clearInterval(this.countdownIntervalId);
+      this.countdownIntervalId = null;
+    }
+  }
+
+  private resolveRemainingSeconds(reward: RouletteReward): number {
+    if (Number.isFinite(reward.remaining_seconds)) {
+      return Math.max(0, Number(reward.remaining_seconds));
+    }
+
+    if (!reward.expires_at) {
+      return 600;
+    }
+
+    const expiresAt = new Date(reward.expires_at).getTime();
+
+    if (Number.isNaN(expiresAt)) {
+      return 600;
+    }
+
+    return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
   }
 
   private loadNavProfile(): void {

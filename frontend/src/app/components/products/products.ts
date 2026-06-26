@@ -33,6 +33,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   selectedProduct: any | null = null;
   activeReward: RouletteReward | null = null;
   private productsRefreshIntervalId: number | null = null;
+  private rewardCountdownIntervalId: number | null = null;
 
   readonly categories = [
     'Todos',
@@ -96,6 +97,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
     if (this.productsRefreshIntervalId !== null) {
       window.clearInterval(this.productsRefreshIntervalId);
     }
+
+    this.stopRewardExpirationWatcher();
   }
 
   setCategory(category: string): void {
@@ -459,13 +462,65 @@ export class ProductsComponent implements OnInit, OnDestroy {
     this.rouletteService.getActiveReward().subscribe({
       next: (response) => {
         this.activeReward = response.reward;
+        this.startRewardExpirationWatcher();
         this.cdr.detectChanges();
       },
       error: () => {
         this.activeReward = null;
+        this.stopRewardExpirationWatcher();
         this.cdr.detectChanges();
       }
     });
+  }
+
+  private startRewardExpirationWatcher(): void {
+    this.stopRewardExpirationWatcher();
+
+    if (!this.activeReward) {
+      return;
+    }
+
+    this.rewardCountdownIntervalId = window.setInterval(() => {
+      if (!this.activeReward) {
+        this.stopRewardExpirationWatcher();
+        return;
+      }
+
+      const remainingSeconds = this.resolveRewardRemainingSeconds(this.activeReward);
+
+      if (remainingSeconds <= 0) {
+        this.activeReward = null;
+        this.cartMessage = 'Tu cupon de ruleta expiro. Los precios volvieron a su valor normal.';
+        this.stopRewardExpirationWatcher();
+        this.cdr.detectChanges();
+      }
+    }, 1000);
+  }
+
+  private stopRewardExpirationWatcher(): void {
+    if (this.rewardCountdownIntervalId !== null) {
+      window.clearInterval(this.rewardCountdownIntervalId);
+      this.rewardCountdownIntervalId = null;
+    }
+  }
+
+  private resolveRewardRemainingSeconds(reward: RouletteReward): number {
+    if (Number.isFinite(reward.remaining_seconds)) {
+      reward.remaining_seconds = Math.max(0, Number(reward.remaining_seconds) - 1);
+      return reward.remaining_seconds;
+    }
+
+    if (!reward.expires_at) {
+      return 0;
+    }
+
+    const expiresAt = new Date(reward.expires_at).getTime();
+
+    if (Number.isNaN(expiresAt)) {
+      return 0;
+    }
+
+    return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
   }
 
   openProductDetails(product: any): void {

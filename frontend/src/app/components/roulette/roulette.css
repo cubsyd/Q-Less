@@ -191,12 +191,14 @@
   overflow: hidden;
   border: 12px solid #1d3323;
   background: conic-gradient(
-    #6ba308 0deg 60deg,
-    #f2c94c 60deg 120deg,
-    #1d5f8f 120deg 180deg,
-    #dc3545 180deg 240deg,
-    #8bd03f 240deg 300deg,
-    #f59f00 300deg 360deg
+    #6f7681 0deg 45deg,
+    #6ba308 45deg 90deg,
+    #8a8f98 90deg 135deg,
+    #1d5f8f 135deg 180deg,
+    #6f7681 180deg 225deg,
+    #dc3545 225deg 270deg,
+    #8bd03f 270deg 315deg,
+    #f59f00 315deg 360deg
   );
   box-shadow: 0 22px 45px rgba(0, 0, 0, 0.22);
   transition: transform 1.6s cubic-bezier(0.2, 0.9, 0.22, 1);
@@ -205,18 +207,18 @@
 .wheel-slice {
   position: absolute;
   inset: 0;
-  transform: rotate(calc(var(--i) * 60deg));
+  transform: rotate(calc(var(--i) * 45deg));
 }
 
 .wheel-slice span {
   position: absolute;
   top: 50%;
   right: 18px;
-  width: 145px;
+  width: 132px;
   color: white;
   font-weight: 900;
   text-align: center;
-  transform: translateY(-50%) rotate(30deg);
+  transform: translateY(-50%) rotate(22deg);
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
 }
 

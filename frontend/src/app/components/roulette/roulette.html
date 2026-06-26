@@ -34,8 +34,8 @@
         <div class="reward-card" *ngIf="activeReward; else noReward">
           <span>Premio activo</span>
           <strong>{{ activeReward.label }}</strong>
-          <small *ngIf="activeReward.prize_type !== 'no_prize'">Disponible hasta {{ getRewardExpiry() }} o hasta que realices tu compra.</small>
-          <small *ngIf="activeReward.prize_type === 'no_prize'">Puedes volver a girar despues de {{ getRewardExpiry() }}.</small>
+          <small *ngIf="activeReward.prize_type !== 'no_prize'">Disponible por {{ getRewardExpiry() }} o hasta que realices tu compra.</small>
+          <small *ngIf="activeReward.prize_type === 'no_prize'">Puedes volver a girar en {{ getRewardExpiry() }}.</small>
         </div>
 
         <ng-template #noReward>
