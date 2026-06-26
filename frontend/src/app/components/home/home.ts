@@ -42,6 +42,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   addingProductIds = new Set<number>();
   favoriteProductIds = new Set<number>();
   updatingFavoriteIds = new Set<number>();
+  selectedProduct: any | null = null;
 
   constructor(
     private authService: AuthService,
@@ -259,8 +260,19 @@ export class HomeComponent implements OnInit, OnDestroy {
     return Number.isFinite(stock) && stock > 0 && stock < 5;
   }
 
+  isOutOfStock(product: any): boolean {
+    const stock = Number(product?.stock);
+
+    return !Number.isFinite(stock) || stock <= 0;
+  }
+
   addToCart(product: any): void {
     if (this.isAdmin) {
+      return;
+    }
+
+    if (this.isOutOfStock(product)) {
+      this.cartMessage = 'Este producto esta agotado. No se puede agregar al carrito hasta que se actualice el stock.';
       return;
     }
 
@@ -359,5 +371,15 @@ export class HomeComponent implements OnInit, OnDestroy {
   private getCurrentUserId(): number | null {
     const userId = this.authService.getUserId();
     return userId ? Number(userId) : null;
+  }
+
+  openProductDetails(product: any): void {
+    this.selectedProduct = product;
+    this.cdr.detectChanges();
+  }
+
+  closeProductDetails(): void {
+    this.selectedProduct = null;
+    this.cdr.detectChanges();
   }
 }

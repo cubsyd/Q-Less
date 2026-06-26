@@ -114,11 +114,22 @@
                 [class.out-of-stock]="isOutOfStock(product)"
                 [disabled]="isAddingToCart(product.id) || isOutOfStock(product)"
                 (click)="addToCart(product)">
+                <i class="bi bi-cart-plus" aria-hidden="true"></i>
                 {{
                   isOutOfStock(product)
                     ? 'Agotado'
                     : (isAddingToCart(product.id) ? 'Agregando...' : (isInCart(product.id) ? 'Agregar mas' : 'Agregar'))
                 }}
+              </button>
+              <button
+                *ngIf="!isAdmin"
+                type="button"
+                class="btn-details"
+                aria-label="Ver detalles del producto"
+                title="Ver detalles"
+                (click)="openProductDetails(product)"
+              >
+                <i class="bi bi-info-circle" aria-hidden="true"></i>
               </button>
               <button
                 *ngIf="!isAdmin"
@@ -143,4 +154,47 @@
       </div>
     </section>
   </main>
+
+  <div class="details-backdrop" *ngIf="selectedProduct as product">
+    <section class="details-modal" role="dialog" aria-modal="true" aria-labelledby="productDetailsTitle">
+      <button type="button" class="details-close" aria-label="Cerrar detalles" (click)="closeProductDetails()">
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+      </button>
+
+      <div class="details-image">
+        <img [src]="getImageUrl(product)" (error)="onImageError($event)" [alt]="product.nombre" />
+      </div>
+
+      <div class="details-content">
+        <span class="details-category">{{ product.categoria || 'Sin categoria' }}</span>
+        <h2 id="productDetailsTitle">{{ product.nombre }}</h2>
+        <p class="details-price">{{ product.precio }} Pesos</p>
+
+        <div class="details-grid">
+          <div>
+            <span>Stock disponible</span>
+            <strong>{{ product.stock }}</strong>
+          </div>
+          <div>
+            <span>Estado</span>
+            <strong>{{ isOutOfStock(product) ? 'Agotado' : 'Disponible' }}</strong>
+          </div>
+        </div>
+
+        <p class="details-description">
+          {{ product.descripcion || 'Producto disponible en el catalogo de Q-LESS.' }}
+        </p>
+
+        <button
+          type="button"
+          class="details-add"
+          [disabled]="isAddingToCart(product.id) || isOutOfStock(product)"
+          (click)="addToCart(product); closeProductDetails()"
+        >
+          <i class="bi bi-cart-plus" aria-hidden="true"></i>
+          {{ isOutOfStock(product) ? 'Agotado' : 'Agregar al carrito' }}
+        </button>
+      </div>
+    </section>
+  </div>
 </div>

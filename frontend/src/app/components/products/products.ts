@@ -29,6 +29,7 @@ export class ProductsComponent implements OnInit, OnDestroy {
   favoriteProductIds = new Set<number>();
   updatingFavoriteIds = new Set<number>();
   selectedImageIndexes: Record<number, number> = {};
+  selectedProduct: any | null = null;
   private productsRefreshIntervalId: number | null = null;
 
   readonly categories = [
@@ -427,5 +428,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
   private getCurrentUserId(): number | null {
     const userId = this.authService.getUserId();
     return userId ? Number(userId) : null;
+  }
+
+  openProductDetails(product: any): void {
+    this.selectedProduct = product;
+    this.cdr.detectChanges();
+  }
+
+  closeProductDetails(): void {
+    this.selectedProduct = null;
+    this.cdr.detectChanges();
   }
 }

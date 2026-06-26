@@ -93,6 +93,7 @@
 .btn-logout,
 .btn-create,
 .btn-add,
+.btn-details,
 .btn-favorite,
 .btn-edit {
   border: none;
@@ -115,6 +116,18 @@
 .btn-add {
   background: #6ba308;
   color: white;
+}
+
+.btn-add,
+.details-add {
+  gap: 0.45rem;
+}
+
+.btn-details {
+  background: #edf7ff;
+  border: 1px solid #bddcf5;
+  color: #1d5f8f;
+  font-size: 1.05rem;
 }
 
 .btn-add.in-cart {
@@ -366,7 +379,7 @@
 
 .product-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 48px 48px;
   gap: 0.5rem;
 }
 
@@ -512,6 +525,7 @@
   }
 
   .btn-add,
+  .btn-details,
   .btn-favorite,
   .btn-edit {
     padding: 0.35rem 0.5rem;
@@ -532,4 +546,5 @@
     padding: 0.6rem;
     font-size: 0.8rem;
   }
+
 }
