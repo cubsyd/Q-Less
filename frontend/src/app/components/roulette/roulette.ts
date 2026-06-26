@@ -24,7 +24,7 @@ export class RouletteComponent implements OnInit, OnDestroy {
     { label: '10% descuento', className: 'label-top' },
     { label: '2x1', className: 'label-top-right' },
     { label: 'Intentalo despues', className: 'label-right' },
-    { label: '10% descuento', className: 'label-bottom-right' },
+    { label: '5% descuento', className: 'label-bottom-right' },
     { label: 'Intentalo despues', className: 'label-bottom' },
     { label: '15% descuento', className: 'label-bottom-left' },
     { label: 'Intentalo despues', className: 'label-left' },
@@ -204,8 +204,12 @@ export class RouletteComponent implements OnInit, OnDestroy {
       return 5;
     }
 
+    if (label.includes('5') || Number(reward.discount_percent) === 5) {
+      return 3;
+    }
+
     if (label.includes('10') || Number(reward.discount_percent) === 10) {
-      return Math.random() > 0.5 ? 0 : 3;
+      return 0;
     }
 
     return 2;
