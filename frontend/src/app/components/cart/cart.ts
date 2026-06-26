@@ -531,6 +531,18 @@ export class CartComponent implements OnInit, OnDestroy {
     return item.subtotal ?? (item.precio * item.cantidad);
   }
 
+  getItemOriginalSubtotal(item: CartItem): number {
+    return (item.precio_original ?? item.precio) * item.cantidad;
+  }
+
+  getTotalDiscount(): number {
+    return this.cartItems.reduce((total, item) => total + Number(item.descuento || 0), 0);
+  }
+
+  getOriginalTotal(): number {
+    return this.total + this.getTotalDiscount();
+  }
+
   hasDiscount(item: CartItem): boolean {
     return !!item.discount_label && Number(item.descuento || 0) > 0;
   }

@@ -191,12 +191,32 @@
         <h4>Productos agregados</h4>
 
         <div class="summary-product" *ngFor="let item of cartItems; trackBy: trackByProductId">
-          <span>
-            {{ item.nombre }}
-            <strong *ngIf="item.cantidad > 1">(x{{ item.cantidad }})</strong>
-          </span>
-          <small>{{ getItemSubtotal(item) }} Pesos</small>
+          <div class="summary-product-info">
+            <span>
+              {{ item.nombre }}
+              <strong *ngIf="item.cantidad > 1">(x{{ item.cantidad }})</strong>
+            </span>
+
+            <small class="summary-discount" *ngIf="hasDiscount(item)">
+              {{ item.discount_label }}: -{{ item.descuento }} Pesos
+            </small>
+          </div>
+
+          <div class="summary-product-price">
+            <small *ngIf="hasDiscount(item)">{{ getItemOriginalSubtotal(item) }} Pesos</small>
+            <strong>{{ getItemSubtotal(item) }} Pesos</strong>
+          </div>
         </div>
+      </div>
+
+      <div class="summary-row" *ngIf="getTotalDiscount() > 0">
+        <span>Subtotal sin descuento</span>
+        <strong>{{ getOriginalTotal() }} Pesos</strong>
+      </div>
+
+      <div class="summary-row discount-total" *ngIf="getTotalDiscount() > 0">
+        <span>Descuento aplicado</span>
+        <strong>-{{ getTotalDiscount() }} Pesos</strong>
       </div>
 
       <div class="summary-row total">

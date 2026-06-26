@@ -285,6 +285,7 @@
 .summary-product {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   gap: 1rem;
   padding: 0.65rem 0.75rem;
   background: #f4f9eb;
@@ -292,19 +293,53 @@
   border-radius: 8px;
 }
 
-.summary-product span {
+.summary-product-info,
+.summary-product-price {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.summary-product-info {
+  min-width: 0;
+}
+
+.summary-product-price {
+  justify-items: end;
+  text-align: right;
+}
+
+.summary-product-info span {
   color: #2c7a09;
   font-weight: 700;
 }
 
-.summary-product strong {
+.summary-product-info strong {
   color: #4d6f20;
 }
 
-.summary-product small {
+.summary-product-price strong {
+  color: #2c7a09;
+  white-space: nowrap;
+}
+
+.summary-product-price small {
+  color: #8b9285;
+  font-weight: 700;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+
+.summary-discount {
   color: #5f6f4f;
   font-weight: 700;
-  white-space: nowrap;
+}
+
+.discount-total {
+  color: #2f7d12;
+  background: #f2fae7;
+  margin: 0.35rem -0.25rem 0;
+  padding-inline: 0.25rem;
+  border-radius: 8px;
 }
 
 .btn-pay {
@@ -513,12 +548,14 @@
     gap: 0.5rem;
   }
 
-  .summary-product span,
-  .summary-product strong {
+  .summary-product-info span,
+  .summary-product-info strong,
+  .summary-product-price strong {
     font-size: 0.8rem;
   }
 
-  .summary-product small {
+  .summary-product small,
+  .summary-discount {
     font-size: 0.7rem;
   }
 
