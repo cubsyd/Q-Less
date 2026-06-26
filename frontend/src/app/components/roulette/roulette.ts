@@ -59,12 +59,15 @@ export class RouletteComponent implements OnInit, OnDestroy {
 
     this.isSpinning = true;
     this.message = 'Girando ruleta...';
-    this.rotation += 1440 + Math.floor(Math.random() * 360);
     this.cdr.detectChanges();
 
-    window.setTimeout(() => {
-      this.rouletteService.spin().subscribe({
-        next: (response) => {
+    this.rouletteService.spin().subscribe({
+      next: (response) => {
+        const prizeIndex = this.getPrizeIndex(response.reward);
+        this.rotation = this.getLandingRotation(prizeIndex);
+        this.cdr.detectChanges();
+
+        window.setTimeout(() => {
           this.activeReward = response.reward;
           this.startCountdown();
           this.message = response.reward.prize_type === 'no_prize'
@@ -72,18 +75,18 @@ export class RouletteComponent implements OnInit, OnDestroy {
             : `Ganaste ${response.reward.label}. Se aplicara automaticamente en el carrito y al pagar.`;
           this.isSpinning = false;
           this.cdr.detectChanges();
-        },
-        error: (error) => {
-          this.activeReward = null;
-          this.message = error?.error?.errors?.ruleta?.[0]
-            || error?.error?.message
-            || 'No se pudo girar la ruleta en este momento.';
-          this.isSpinning = false;
-          this.loadActiveReward();
-          this.cdr.detectChanges();
-        }
-      });
-    }, 1600);
+        }, 1600);
+      },
+      error: (error) => {
+        this.activeReward = null;
+        this.message = error?.error?.errors?.ruleta?.[0]
+          || error?.error?.message
+          || 'No se pudo girar la ruleta en este momento.';
+        this.isSpinning = false;
+        this.loadActiveReward();
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   getRewardExpiry(): string {
@@ -179,6 +182,49 @@ export class RouletteComponent implements OnInit, OnDestroy {
     }
 
     return Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+  }
+
+  private getPrizeIndex(reward: RouletteReward): number {
+    const label = this.normalizeText(reward.label);
+
+    if (reward.prize_type === 'no_prize') {
+      const noPrizeIndexes = [2, 4, 6];
+      return noPrizeIndexes[Math.floor(Math.random() * noPrizeIndexes.length)];
+    }
+
+    if (reward.prize_type === 'two_for_one' || label.includes('2x1')) {
+      return 1;
+    }
+
+    if (label.includes('20') || Number(reward.discount_percent) === 20) {
+      return 7;
+    }
+
+    if (label.includes('15') || Number(reward.discount_percent) === 15) {
+      return 5;
+    }
+
+    if (label.includes('10') || Number(reward.discount_percent) === 10) {
+      return Math.random() > 0.5 ? 0 : 3;
+    }
+
+    return 2;
+  }
+
+  private getLandingRotation(prizeIndex: number): number {
+    const sliceCenter = 22.5 + (prizeIndex * 45);
+    const currentRotation = ((this.rotation % 360) + 360) % 360;
+    const targetRotation = (360 - sliceCenter) % 360;
+    const delta = (targetRotation - currentRotation + 360) % 360;
+
+    return this.rotation + 1440 + delta;
+  }
+
+  private normalizeText(value: string | null | undefined): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
   }
 
   private loadNavProfile(): void {

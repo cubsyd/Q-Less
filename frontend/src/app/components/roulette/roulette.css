@@ -191,14 +191,14 @@
   overflow: hidden;
   border: 12px solid #1d3323;
   background: conic-gradient(
-    #6f7681 0deg 45deg,
-    #6ba308 45deg 90deg,
-    #8a8f98 90deg 135deg,
-    #1d5f8f 135deg 180deg,
-    #6f7681 180deg 225deg,
-    #dc3545 225deg 270deg,
-    #8bd03f 270deg 315deg,
-    #f59f00 315deg 360deg
+    #1e88e5 0deg 45deg,
+    #54b000 45deg 90deg,
+    #7f8790 90deg 135deg,
+    #00a6a6 135deg 180deg,
+    #8f969e 180deg 225deg,
+    #e73552 225deg 270deg,
+    #7f8790 270deg 315deg,
+    #f5a400 315deg 360deg
   );
   box-shadow: 0 22px 45px rgba(0, 0, 0, 0.22);
   transition: transform 1.6s cubic-bezier(0.2, 0.9, 0.22, 1);
