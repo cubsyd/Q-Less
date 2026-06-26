@@ -174,7 +174,7 @@
 .pointer {
   position: absolute;
   top: 28px;
-  z-index: 2;
+  z-index: 4;
   width: 0;
   height: 0;
   border-left: 22px solid transparent;
@@ -206,11 +206,14 @@
 
 .wheel-label-layer {
   position: absolute;
+  top: 50%;
+  left: 50%;
   width: min(72vw, 460px);
   aspect-ratio: 1;
   border-radius: 50%;
   pointer-events: none;
   z-index: 2;
+  transition: transform 1.6s cubic-bezier(0.2, 0.9, 0.22, 1);
 }
 
 .wheel-slice {

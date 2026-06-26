@@ -73,7 +73,10 @@
           </div>
         </div>
 
-        <div class="wheel-label-layer" aria-hidden="true">
+        <div
+          class="wheel-label-layer"
+          [style.transform]="'translate(-50%, -50%) rotate(' + rotation + 'deg)'"
+          aria-hidden="true">
           <span
             class="wheel-label"
             *ngFor="let prize of prizes"
