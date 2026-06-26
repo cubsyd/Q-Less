@@ -21,14 +21,14 @@ export class RouletteComponent implements OnInit, OnDestroy {
   private countdownIntervalId: number | null = null;
 
   readonly prizes = [
-    'Intentalo despues',
-    '10% descuento',
-    'Intentalo despues',
-    '15% descuento',
-    'Intentalo despues',
-    '20% descuento',
-    '10% descuento',
-    '2x1',
+    { label: '10% descuento', className: 'label-top' },
+    { label: '2x1', className: 'label-top-right' },
+    { label: 'Intentalo despues', className: 'label-right' },
+    { label: '10% descuento', className: 'label-bottom-right' },
+    { label: 'Intentalo despues', className: 'label-bottom' },
+    { label: '15% descuento', className: 'label-bottom-left' },
+    { label: 'Intentalo despues', className: 'label-left' },
+    { label: '20% descuento', className: 'label-top-left' },
   ];
 
   constructor(
