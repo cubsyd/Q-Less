@@ -1,23 +1,24 @@
 :root {
-  --sena-deep: #12421f;
-  --sena-green: #1f7a1f;
-  --sena-bright: #39a935;
+  --sena-deep: #245c2f;
+  --sena-green: #2f8f35;
+  --sena-bright: #55b83f;
   --sena-lime: #82c91e;
-  --sena-mint: #dff5c6;
-  --sena-soft: #f4faec;
+  --sena-mint: #e6f8d8;
+  --sena-soft: #f8fcf2;
   --sena-gold: #f5c542;
-  --sena-ink: #17351f;
+  --sena-ink: #213b27;
   --sena-muted: #5d6a58;
   --sena-page-gradient:
-    radial-gradient(circle at 12% 12%, rgba(223, 245, 198, 0.88) 0, rgba(223, 245, 198, 0) 28%),
-    linear-gradient(135deg, #12421f 0%, #1f7a1f 34%, #65b80f 72%, #a9df55 100%);
-  --sena-card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(246, 252, 238, 0.96));
-  --sena-header-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(239, 249, 226, 0.98));
-  --sena-button-gradient: linear-gradient(135deg, #247c24 0%, #62b500 100%);
-  --sena-button-gradient-hover: linear-gradient(135deg, #185e21 0%, #4c9700 100%);
-  --sena-outline: rgba(57, 169, 53, 0.26);
-  --sena-shadow: 0 18px 45px rgba(18, 66, 31, 0.18);
-  --sena-soft-shadow: 0 8px 24px rgba(18, 66, 31, 0.12);
+    radial-gradient(circle at 12% 10%, rgba(242, 255, 227, 0.96) 0, rgba(242, 255, 227, 0) 32%),
+    radial-gradient(circle at 88% 18%, rgba(199, 239, 152, 0.7) 0, rgba(199, 239, 152, 0) 26%),
+    linear-gradient(135deg, #eaf8dc 0%, #bce777 42%, #83c934 100%);
+  --sena-card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(250, 254, 245, 0.98));
+  --sena-header-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(247, 253, 239, 0.99));
+  --sena-button-gradient: linear-gradient(135deg, #35a043 0%, #79c81a 100%);
+  --sena-button-gradient-hover: linear-gradient(135deg, #2b8537 0%, #64ae11 100%);
+  --sena-outline: rgba(85, 184, 63, 0.24);
+  --sena-shadow: 0 18px 42px rgba(42, 111, 47, 0.14);
+  --sena-soft-shadow: 0 8px 22px rgba(42, 111, 47, 0.1);
 }
 
 /* You can add global styles to this file, and also import other style files */
@@ -205,7 +206,7 @@ body {
 .form-card,
 .login-card {
   background: var(--sena-card-gradient) !important;
-  border: 1px solid rgba(181, 222, 144, 0.52);
+  border: 1px solid rgba(197, 229, 167, 0.58);
   box-shadow: var(--sena-shadow) !important;
 }
 
@@ -247,8 +248,8 @@ body {
 .reward-card,
 .details-grid div {
   background: linear-gradient(145deg, #ffffff 0%, #f6fbef 100%) !important;
-  border-color: rgba(183, 222, 149, 0.72) !important;
-  box-shadow: 0 10px 25px rgba(18, 66, 31, 0.08);
+  border-color: rgba(204, 232, 176, 0.72) !important;
+  box-shadow: 0 10px 22px rgba(42, 111, 47, 0.07);
 }
 
 .collection-item.active,
@@ -276,7 +277,7 @@ body {
 .sidebar,
 .chat-sidebar,
 .profile-sidebar {
-  background: linear-gradient(180deg, rgba(247, 252, 241, 0.98), rgba(226, 244, 206, 0.96)) !important;
+  background: linear-gradient(180deg, rgba(253, 255, 250, 0.98), rgba(237, 249, 224, 0.96)) !important;
   border-color: rgba(178, 223, 136, 0.72) !important;
 }
 
