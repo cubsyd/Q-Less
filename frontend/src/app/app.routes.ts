@@ -12,6 +12,7 @@ import { MyOrdersComponent } from './components/my-orders/my-orders.js';
 import { ChatConversationsComponent } from './components/chat-conversations/chat-conversations.js';
 import { UsersComponent } from './components/users/users.js';
 import { UserProfileComponent } from './components/user-profile/user-profile.js';
+import { RouletteComponent } from './components/roulette/roulette.js';
 import { AuthGuard } from './guards/auth.guard.js';
 
 export const routes: Routes = [
@@ -22,6 +23,7 @@ export const routes: Routes = [
   { path: 'nuevo-producto', component: CreateProduct, canActivate: [AuthGuard], data: { adminOnly: true } },
   { path: 'editar-producto/:id', component: EditProduct, canActivate: [AuthGuard], data: { adminOnly: true } },
   { path: 'chatbot', component: ChatbotComponent, canActivate: [AuthGuard], data: { userOnly: true } },
+  { path: 'ruleta', component: RouletteComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'carrito', component: CartComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-pedidos', component: MyOrdersComponent, canActivate: [AuthGuard], data: { userOnly: true } },
   { path: 'mis-conversaciones', component: ChatConversationsComponent, canActivate: [AuthGuard], data: { userOnly: true } },

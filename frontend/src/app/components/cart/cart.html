@@ -10,6 +10,7 @@
       <a routerLink="/home">Inicio</a>
       <a routerLink="/productos">Productos</a>
       <a routerLink="/chatbot">Q-bot</a>
+      <a routerLink="/ruleta">Ruleta</a>
       <a routerLink="/mis-pedidos">Mis pedidos</a>
       <a routerLink="/mi-perfil" class="nav-profile-link" aria-label="Mi perfil" title="Mi perfil">
         <img *ngIf="userPhotoUrl" [src]="userPhotoUrl" alt="Foto de perfil" />
@@ -95,6 +96,12 @@
               {{ item.precio }} Pesos
             </p>
 
+            <p class="discount-line" *ngIf="hasDiscount(item)">
+              {{ item.discount_label }} aplicado.
+              Ahorras {{ item.descuento }} Pesos
+              <span *ngIf="item.precio_original">sobre {{ item.precio_original }} Pesos</span>
+            </p>
+
             <p class="item-stock">
               Disponibles restantes:
               {{ item.stock_available ?? 0 }}
@@ -109,7 +116,7 @@
           <div class="item-actions">
 
             <strong>
-              {{ item.precio * item.cantidad }} Pesos
+              {{ getItemSubtotal(item) }} Pesos
             </strong>
 
             <div class="quantity-actions">
@@ -188,7 +195,7 @@
             {{ item.nombre }}
             <strong *ngIf="item.cantidad > 1">(x{{ item.cantidad }})</strong>
           </span>
-          <small>{{ item.precio * item.cantidad }} Pesos</small>
+          <small>{{ getItemSubtotal(item) }} Pesos</small>
         </div>
       </div>
 

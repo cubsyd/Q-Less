@@ -527,6 +527,14 @@ export class CartComponent implements OnInit, OnDestroy {
     return this.cartItems.reduce((total, item) => total + item.cantidad, 0);
   }
 
+  getItemSubtotal(item: CartItem): number {
+    return item.subtotal ?? (item.precio * item.cantidad);
+  }
+
+  hasDiscount(item: CartItem): boolean {
+    return !!item.discount_label && Number(item.descuento || 0) > 0;
+  }
+
   trackByProductId(_: number, item: CartItem): number {
     return item.id;
   }

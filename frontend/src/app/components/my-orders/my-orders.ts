@@ -104,10 +104,15 @@ export class MyOrdersComponent implements OnInit, OnDestroy {
     const name = this.getProductName(item);
     const quantity = item?.cantidad || item?.quantity || 1;
     const subtotal = item?.subtotal;
+    const discountLabel = item?.discount_label;
+    const discountAmount = Number(item?.descuento || 0);
+    const discountText = discountLabel
+      ? ` | ${discountLabel}${discountAmount > 0 ? `, ahorro ${discountAmount} Pesos` : ''}`
+      : '';
 
     return subtotal !== undefined && subtotal !== null
-      ? `${name} x${quantity} - ${subtotal} Pesos`
-      : `${name} x${quantity}`;
+      ? `${name} x${quantity} - ${subtotal} Pesos${discountText}`
+      : `${name} x${quantity}${discountText}`;
   }
 
   logout(): void {

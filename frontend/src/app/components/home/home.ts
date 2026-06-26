@@ -7,6 +7,7 @@ import { AuthService } from '../../services/auth.js';
 import { ProductService } from '../../services/product.service.js';
 import { CartService } from '../../services/cart.service.js';
 import { FavoriteService } from '../../services/favorite.service';
+import { RouletteReward, RouletteService } from '../../services/roulette.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -43,6 +44,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   favoriteProductIds = new Set<number>();
   updatingFavoriteIds = new Set<number>();
   selectedProduct: any | null = null;
+  activeReward: RouletteReward | null = null;
 
   constructor(
     private authService: AuthService,
@@ -50,6 +52,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private cartService: CartService,
     private favoriteService: FavoriteService,
+    private rouletteService: RouletteService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -68,6 +71,7 @@ export class HomeComponent implements OnInit, OnDestroy {
       });
 
       this.loadFavorites();
+      this.loadActiveReward();
     }
 
     this.loadProducts();
@@ -266,6 +270,27 @@ export class HomeComponent implements OnInit, OnDestroy {
     return !Number.isFinite(stock) || stock <= 0;
   }
 
+  getDisplayPrice(product: any): number {
+    const price = Number(product?.precio || 0);
+
+    if (!this.activeReward || this.activeReward.prize_type !== 'percent_discount') {
+      return price;
+    }
+
+    const discount = Math.max(0, Math.min(90, Number(this.activeReward.discount_percent || 0)));
+    return Math.round(price * (100 - discount) / 100);
+  }
+
+  hasPriceDiscount(product: any): boolean {
+    return this.getDisplayPrice(product) < Number(product?.precio || 0);
+  }
+
+  getPromotionLabel(): string | null {
+    return this.activeReward && this.activeReward.prize_type !== 'no_prize'
+      ? this.activeReward.label
+      : null;
+  }
+
   addToCart(product: any): void {
     if (this.isAdmin) {
       return;
@@ -371,6 +396,19 @@ export class HomeComponent implements OnInit, OnDestroy {
   private getCurrentUserId(): number | null {
     const userId = this.authService.getUserId();
     return userId ? Number(userId) : null;
+  }
+
+  private loadActiveReward(): void {
+    this.rouletteService.getActiveReward().subscribe({
+      next: (response) => {
+        this.activeReward = response.reward;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.activeReward = null;
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   openProductDetails(product: any): void {

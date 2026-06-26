@@ -1,0 +1,79 @@
+<div class="roulette-wrapper">
+  <header class="main-header">
+    <div class="brand">
+      <h1>Q-LESS</h1>
+    </div>
+
+    <nav class="main-nav">
+      <a routerLink="/home">Inicio</a>
+      <a routerLink="/productos">Productos</a>
+      <a routerLink="/chatbot">Q-bot</a>
+      <a routerLink="/ruleta" class="active-link">Ruleta</a>
+      <a routerLink="/mis-pedidos">Mis pedidos</a>
+      <a routerLink="/mi-perfil" class="nav-profile-link" aria-label="Mi perfil" title="Mi perfil">
+        <img *ngIf="userPhotoUrl" [src]="userPhotoUrl" alt="Foto de perfil" />
+        <span *ngIf="!userPhotoUrl">{{ getNavInitials() }}</span>
+      </a>
+    </nav>
+
+    <div class="top-actions">
+      <button class="btn-logout" type="button" (click)="logout()">Cerrar Sesion</button>
+    </div>
+  </header>
+
+  <main class="roulette-content">
+    <section class="roulette-panel">
+      <div class="roulette-copy">
+        <span class="eyebrow">Minijuego Q-LESS</span>
+        <h2>Ruleta de beneficios</h2>
+        <p>
+          Gira la ruleta y consigue un beneficio para tu proximo pedido. El premio se aplica automaticamente
+          sobre los productos del carrito y queda visible antes de pagar.
+        </p>
+
+        <div class="reward-card" *ngIf="activeReward; else noReward">
+          <span>Premio activo</span>
+          <strong>{{ activeReward.label }}</strong>
+          <small *ngIf="activeReward.prize_type !== 'no_prize'">Disponible hasta {{ getRewardExpiry() }} o hasta que realices tu compra.</small>
+          <small *ngIf="activeReward.prize_type === 'no_prize'">Puedes volver a girar despues de {{ getRewardExpiry() }}.</small>
+        </div>
+
+        <ng-template #noReward>
+          <div class="reward-card muted">
+            <span>Sin premio activo</span>
+            <strong>Gira para ganar</strong>
+            <small>Disponible una vez cada 10 minutos.</small>
+          </div>
+        </ng-template>
+
+        <p class="roulette-message" *ngIf="message">{{ message }}</p>
+
+        <button
+          type="button"
+          class="spin-button"
+          [disabled]="isSpinning || !!activeReward"
+          (click)="spin()">
+          <i class="bi bi-stars" aria-hidden="true"></i>
+          {{ isSpinning ? 'Girando...' : activeReward ? 'Premio activo' : 'Girar ruleta' }}
+        </button>
+
+        <a routerLink="/productos" class="shop-link">
+          Ir a productos
+        </a>
+      </div>
+
+      <div class="roulette-stage">
+        <div class="pointer"></div>
+
+        <div class="wheel" [style.transform]="'rotate(' + rotation + 'deg)'">
+          <div class="wheel-slice" *ngFor="let prize of prizes; let i = index" [style.--i]="i">
+            <span>{{ prize }}</span>
+          </div>
+          <div class="wheel-center">
+            QL
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>

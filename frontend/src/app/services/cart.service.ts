@@ -9,6 +9,11 @@ export interface CartItem {
   id: number;
   nombre: string;
   precio: number;
+  precio_original?: number;
+  subtotal?: number;
+  descuento?: number;
+  discount_label?: string | null;
+  discount_percent?: number | null;
   image_path?: string | null;
   product_images?: string[] | null;
   cantidad: number;
@@ -81,7 +86,7 @@ export class CartService {
   }
 
   getTotal(): number {
-    return this.getItems().reduce((total, item) => total + (item.precio * item.cantidad), 0);
+    return this.getItems().reduce((total, item) => total + (item.subtotal ?? (item.precio * item.cantidad)), 0);
   }
 
   hasItem(productId: number): boolean {

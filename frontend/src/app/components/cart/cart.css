@@ -210,6 +210,11 @@
   font-weight: 700;
 }
 
+.discount-line {
+  color: #2c7a09 !important;
+  font-weight: 800;
+}
+
 .item-actions {
   display: flex;
   flex-direction: column;
