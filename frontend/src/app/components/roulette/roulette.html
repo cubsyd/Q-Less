@@ -68,21 +68,17 @@
         <div class="wheel" [style.transform]="'rotate(' + rotation + 'deg)'">
           <div class="wheel-slice" *ngFor="let prize of prizes; let i = index" [style.--i]="i">
           </div>
+          <div class="wheel-label-layer" aria-hidden="true">
+            <span
+              class="wheel-label"
+              *ngFor="let prize of prizes"
+              [ngClass]="prize.className">
+              {{ prize.label }}
+            </span>
+          </div>
           <div class="wheel-center">
             QL
           </div>
-        </div>
-
-        <div
-          class="wheel-label-layer"
-          [style.transform]="'translate(-50%, -50%) rotate(' + rotation + 'deg)'"
-          aria-hidden="true">
-          <span
-            class="wheel-label"
-            *ngFor="let prize of prizes"
-            [ngClass]="prize.className">
-            {{ prize.label }}
-          </span>
         </div>
       </div>
     </section>

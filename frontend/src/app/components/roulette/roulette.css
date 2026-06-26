@@ -206,14 +206,10 @@
 
 .wheel-label-layer {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: min(72vw, 460px);
-  aspect-ratio: 1;
+  inset: 0;
   border-radius: 50%;
   pointer-events: none;
   z-index: 2;
-  transition: transform 1.6s cubic-bezier(0.2, 0.9, 0.22, 1);
 }
 
 .wheel-slice {
@@ -285,6 +281,7 @@
 
 .wheel-center {
   position: absolute;
+  z-index: 3;
   inset: 50%;
   width: 112px;
   height: 112px;
