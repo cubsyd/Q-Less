@@ -9,9 +9,9 @@
   --sena-ink: #213b27;
   --sena-muted: #5d6a58;
   --sena-page-gradient:
-    radial-gradient(circle at 12% 10%, rgba(242, 255, 227, 0.96) 0, rgba(242, 255, 227, 0) 32%),
-    radial-gradient(circle at 88% 18%, rgba(199, 239, 152, 0.7) 0, rgba(199, 239, 152, 0) 26%),
-    linear-gradient(135deg, #eaf8dc 0%, #bce777 42%, #83c934 100%);
+    radial-gradient(circle at 15% 12%, rgba(121, 200, 26, 0.42) 0, rgba(121, 200, 26, 0) 32%),
+    radial-gradient(circle at 86% 18%, rgba(53, 160, 67, 0.36) 0, rgba(53, 160, 67, 0) 30%),
+    linear-gradient(135deg, #35a043 0%, #79c81a 100%);
   --sena-card-gradient: linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(250, 254, 245, 0.98));
   --sena-header-gradient: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(247, 253, 239, 0.99));
   --sena-button-gradient: linear-gradient(135deg, #35a043 0%, #79c81a 100%);
