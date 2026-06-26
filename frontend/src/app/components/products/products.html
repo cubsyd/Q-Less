@@ -117,14 +117,11 @@
                 class="btn-add"
                 [class.in-cart]="isInCart(product.id)"
                 [class.out-of-stock]="isOutOfStock(product)"
+                [attr.aria-label]="isOutOfStock(product) ? 'Producto agotado' : (isAddingToCart(product.id) ? 'Agregando al carrito' : (isInCart(product.id) ? 'Agregar otra unidad al carrito' : 'Agregar al carrito'))"
+                [title]="isOutOfStock(product) ? 'Producto agotado' : (isAddingToCart(product.id) ? 'Agregando al carrito' : (isInCart(product.id) ? 'Agregar otra unidad al carrito' : 'Agregar al carrito'))"
                 [disabled]="isAddingToCart(product.id) || isOutOfStock(product)"
                 (click)="addToCart(product)">
                 <i class="bi bi-cart-plus" aria-hidden="true"></i>
-                {{
-                  isOutOfStock(product)
-                    ? 'Agotado'
-                    : (isAddingToCart(product.id) ? 'Agregando...' : (isInCart(product.id) ? 'Agregar mas' : 'Agregar'))
-                }}
               </button>
               <button
                 *ngIf="!isAdmin"
@@ -196,13 +193,14 @@
 
         <button
           type="button"
-          class="details-add"
-          [disabled]="isAddingToCart(product.id) || isOutOfStock(product)"
-          (click)="addToCart(product); closeProductDetails()"
-        >
-          <i class="bi bi-cart-plus" aria-hidden="true"></i>
-          {{ isOutOfStock(product) ? 'Agotado' : 'Agregar al carrito' }}
-        </button>
+        class="details-add"
+        [attr.aria-label]="isOutOfStock(product) ? 'Producto agotado' : 'Agregar al carrito'"
+        [title]="isOutOfStock(product) ? 'Producto agotado' : 'Agregar al carrito'"
+        [disabled]="isAddingToCart(product.id) || isOutOfStock(product)"
+        (click)="addToCart(product); closeProductDetails()"
+      >
+        <i class="bi bi-cart-plus" aria-hidden="true"></i>
+      </button>
       </div>
     </section>
   </div>

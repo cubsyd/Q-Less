@@ -391,7 +391,7 @@
 
 .product-actions {
   display: grid;
-  grid-template-columns: 1fr 48px 48px;
+  grid-template-columns: repeat(3, 48px);
   gap: 0.5rem;
 }
 
@@ -413,7 +413,7 @@
 .btn-add {
   background: #6ba308;
   color: white;
-  gap: 0.45rem;
+  font-size: 1.05rem;
 }
 
 .btn-add.in-cart {

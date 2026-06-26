@@ -267,12 +267,15 @@ body {
 
 .details-add {
   margin-top: auto;
+  width: 52px;
+  height: 52px;
   border: none;
   border-radius: 10px;
   background: #6ba308;
   color: white;
-  padding: 0.85rem 1rem;
+  padding: 0;
   font-weight: 800;
+  font-size: 1.15rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
