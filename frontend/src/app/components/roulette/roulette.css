@@ -204,6 +204,15 @@
   transition: transform 1.6s cubic-bezier(0.2, 0.9, 0.22, 1);
 }
 
+.wheel-label-layer {
+  position: absolute;
+  width: min(72vw, 460px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .wheel-slice {
   position: absolute;
   inset: 0;
@@ -213,9 +222,9 @@
 .wheel-label {
   position: absolute;
   z-index: 1;
-  width: 112px;
+  width: 118px;
   color: white;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 900;
   line-height: 1.1;
   text-align: center;
@@ -224,51 +233,51 @@
 }
 
 .label-top {
-  top: 58px;
+  top: 54px;
   left: 50%;
-  transform: translateX(-50%) rotate(66deg);
+  transform: translateX(-50%);
 }
 
 .label-top-right {
-  top: 118px;
-  right: 70px;
-  transform: rotate(-22deg);
+  top: 115px;
+  right: 58px;
+  transform: rotate(-16deg);
 }
 
 .label-right {
   top: 50%;
-  right: 34px;
+  right: 24px;
   transform: translateY(-50%);
 }
 
 .label-bottom-right {
-  right: 70px;
-  bottom: 118px;
-  transform: rotate(45deg);
+  right: 58px;
+  bottom: 115px;
+  transform: rotate(16deg);
 }
 
 .label-bottom {
-  bottom: 58px;
+  bottom: 54px;
   left: 50%;
-  transform: translateX(-50%) rotate(90deg);
+  transform: translateX(-50%);
 }
 
 .label-bottom-left {
-  bottom: 118px;
-  left: 70px;
-  transform: rotate(-45deg);
+  bottom: 115px;
+  left: 58px;
+  transform: rotate(-16deg);
 }
 
 .label-left {
   top: 50%;
-  left: 34px;
-  transform: translateY(-50%) rotate(180deg);
+  left: 24px;
+  transform: translateY(-50%);
 }
 
 .label-top-left {
-  top: 118px;
-  left: 70px;
-  transform: rotate(45deg);
+  top: 115px;
+  left: 58px;
+  transform: rotate(16deg);
 }
 
 .wheel-center {
@@ -333,19 +342,23 @@
     border-width: 8px;
   }
 
+  .wheel-label-layer {
+    width: 300px;
+  }
+
   .wheel-label {
     width: 86px;
-    font-size: 0.78rem;
+    font-size: 0.68rem;
   }
 
   .label-top { top: 36px; }
-  .label-top-right { top: 76px; right: 42px; }
-  .label-right { right: 18px; }
-  .label-bottom-right { right: 42px; bottom: 76px; }
+  .label-top-right { top: 72px; right: 34px; }
+  .label-right { right: 12px; }
+  .label-bottom-right { right: 34px; bottom: 72px; }
   .label-bottom { bottom: 36px; }
-  .label-bottom-left { bottom: 76px; left: 42px; }
-  .label-left { left: 18px; }
-  .label-top-left { top: 76px; left: 42px; }
+  .label-bottom-left { bottom: 72px; left: 34px; }
+  .label-left { left: 12px; }
+  .label-top-left { top: 72px; left: 34px; }
 
   .wheel-center {
     width: 86px;
