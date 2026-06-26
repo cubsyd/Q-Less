@@ -123,8 +123,9 @@ class RouletteRewardService
     {
         $prizes = [
             ['type' => 'no_prize', 'label' => 'Intentalo la proxima vez', 'weight' => 55],
-            ['type' => 'percent_discount', 'label' => '10% de descuento', 'discount_percent' => 10, 'weight' => 25],
-            ['type' => 'percent_discount', 'label' => '15% de descuento', 'discount_percent' => 15, 'weight' => 12],
+            ['type' => 'percent_discount', 'label' => '5% de descuento', 'discount_percent' => 5, 'weight' => 18],
+            ['type' => 'percent_discount', 'label' => '10% de descuento', 'discount_percent' => 10, 'weight' => 17],
+            ['type' => 'percent_discount', 'label' => '15% de descuento', 'discount_percent' => 15, 'weight' => 10],
             ['type' => 'percent_discount', 'label' => '20% de descuento', 'discount_percent' => 20, 'weight' => 5],
             ['type' => 'two_for_one', 'label' => '2x1 en productos del carrito', 'weight' => 3],
         ];
