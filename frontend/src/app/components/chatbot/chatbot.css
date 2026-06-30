@@ -1,15 +1,15 @@
 :host {
 display: block;
-min-height: 100vh;
-background: #f4f4f4;
+min-height: 100dvh;
+background: var(--sena-page-gradient);
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .chatbot-wrapper {
-min-height: 100vh;
+min-height: 100dvh;
 display: grid;
 grid-template-columns: 240px 1fr;
-background: white;
+background: transparent;
 }
 
 .sidebar {
@@ -73,12 +73,15 @@ margin-top: auto;
 .chat-panel {
 display: flex;
 flex-direction: column;
-min-height: 100vh;
+min-height: 100dvh;
+background: transparent;
 }
 
 .chat-header {
 padding: 1rem 1.5rem;
-border-bottom: 1px solid #ebebeb;
+background: rgba(255, 255, 255, 0.78);
+border-bottom: 1px solid rgba(197, 229, 167, 0.58);
+backdrop-filter: blur(10px);
 }
 
 .chat-title {
@@ -114,7 +117,7 @@ font-size: 1.4rem;
 .chat-messages {
 flex: 1;
 padding: 1.5rem;
-background: #ffffff;
+background: transparent;
 display: flex;
 flex-direction: column;
 gap: 1rem;
@@ -250,7 +253,9 @@ opacity: 0.9;
 display: flex;
 gap: 0.75rem;
 padding: 1rem 1.5rem 1.5rem;
-background: white;
+background: rgba(255, 255, 255, 0.78);
+backdrop-filter: blur(10px);
+border-top: 1px solid rgba(197, 229, 167, 0.58);
 }
 
 .chat-input input {
@@ -332,7 +337,7 @@ flex-direction: column;
   }
 
   .chat-panel {
-    min-height: calc(100vh - 200px);
+    min-height: auto;
   }
 
   .chat-header {

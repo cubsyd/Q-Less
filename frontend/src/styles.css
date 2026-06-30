@@ -167,13 +167,19 @@ select,
 html, body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
   background: var(--sena-page-gradient);
   background-attachment: fixed;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+app-root {
+  display: block;
+  min-height: 100dvh;
+  background: var(--sena-page-gradient);
 }
 
 .main-header {

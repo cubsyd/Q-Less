@@ -1,15 +1,15 @@
 :host {
 display: block;
-min-height: 100vh;
-background: #f4f4f4;
+min-height: 100dvh;
+background: var(--sena-page-gradient);
 font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .conversations-wrapper {
-min-height: 100vh;
+min-height: 100dvh;
 display: grid;
 grid-template-columns: 240px 1fr;
-background: white;
+background: transparent;
 }
 
 .sidebar {
@@ -70,12 +70,16 @@ background: var(--sena-button-gradient);
 
 .conversations-panel {
 padding: 2rem;
-background: #ffffff;
+background: transparent;
 }
 
 .conversations-header {
 padding-bottom: 1.25rem;
-border-bottom: 1px solid #ebebeb;
+background: rgba(255, 255, 255, 0.72);
+border: 1px solid rgba(197, 229, 167, 0.58);
+border-radius: 18px;
+padding: 1.25rem;
+backdrop-filter: blur(10px);
 }
 
 .conversations-header h1 {

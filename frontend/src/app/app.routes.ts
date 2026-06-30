@@ -4,6 +4,8 @@ import { CreateProduct } from './components/create-product/create-product.js';
 import { EditProduct } from './components/edit-product/edit-product.js';
 import { LoginComponent } from './components/login/login.js';
 import { RegisterComponent } from './components/register/register.js';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.js';
+import { ResetPasswordComponent } from './components/reset-password/reset-password.js';
 import { ProductsComponent } from './components/products/products.js';
 import { ChatbotComponent } from './components/chatbot/chatbot.js';
 import { CartComponent } from './components/cart/cart.js';
@@ -18,6 +20,8 @@ import { AuthGuard } from './guards/auth.guard.js';
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'home', component: HomeComponent, canActivate: [AuthGuard] },
   { path: 'productos', component: ProductsComponent, canActivate: [AuthGuard] },
   { path: 'nuevo-producto', component: CreateProduct, canActivate: [AuthGuard], data: { adminOnly: true } },

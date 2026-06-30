@@ -20,6 +20,19 @@ export class AuthService {
     return this.http.post(`${this.API_URL}/login`, credentials).pipe(timeout(30000));
   }
 
+  forgotPassword(payload: { email: string }): Observable<any> {
+    return this.http.post(`${this.API_URL}/forgot-password`, payload).pipe(timeout(30000));
+  }
+
+  resetPassword(payload: {
+    email: string;
+    token: string;
+    password: string;
+    password_confirmation: string;
+  }): Observable<any> {
+    return this.http.post(`${this.API_URL}/reset-password`, payload).pipe(timeout(30000));
+  }
+
   loadCurrentUser(): Observable<any> {
     const userId = this.getUserId();
     return this.http.get<any>(`${this.API_URL}/users/${userId}`).pipe(

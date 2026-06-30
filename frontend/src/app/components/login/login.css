@@ -127,6 +127,26 @@
   color: inherit;
 }
 
+.forgot-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: -0.35rem 0 1rem;
+}
+
+.forgot-row button {
+  border: 0;
+  background: transparent;
+  color: var(--sena-green);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0;
+  cursor: pointer;
+}
+
+.forgot-row button:hover {
+  color: var(--sena-deep);
+  text-decoration: underline;
+}
 
 .login-button {
   width: 100%;

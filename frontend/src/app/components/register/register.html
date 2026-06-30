@@ -68,7 +68,7 @@
           </div>
           <div class="password-rules">
             <span *ngFor="let rule of passwordRules" [class.passed]="rule.passed">
-              {{ rule.passed ? '✓' : '×' }} {{ rule.label }}
+              {{ rule.passed ? 'OK' : 'No' }} {{ rule.label }}
             </span>
           </div>
         </div>
@@ -98,10 +98,10 @@
             name="acceptedDataPolicy"
             [(ngModel)]="acceptedDataPolicy"
           />
-          <span>
-            Acepto los
+          <span class="terms-text">
+            Acepto los terminos de uso y autorizo el tratamiento de mis datos personales.
             <button type="button" class="terms-link" (click)="openDataPolicyModal()">
-              terminos de uso y tratamiento de datos personales
+              Leer terminos completos
             </button>
           </span>
         </label>
@@ -129,12 +129,14 @@
       <h2 id="termsTitle">Terminos de uso y tratamiento de datos personales</h2>
 
       <div class="terms-content">
+        <h3>Uso responsable de Q-LESS</h3>
         <p>
           Al crear una cuenta en Q-LESS autorizas el uso de tus datos personales para la gestion de usuarios,
           pedidos, carrito, historial de compras, foto de perfil, conversaciones con Q-bot y comunicacion
           relacionada con el servicio de papeleria virtual.
         </p>
 
+        <h3>Tratamiento de datos personales</h3>
         <p>
           La informacion registrada sera usada unicamente para permitir el funcionamiento del sistema,
           validar tu identidad dentro de la plataforma, administrar pedidos y mejorar la experiencia de uso.
@@ -142,6 +144,7 @@
           servicio, salvo cuando sea requerido para procesos operativos como pagos, soporte o cumplimiento legal.
         </p>
 
+        <h3>Compromisos del usuario</h3>
         <p>
           Como usuario te comprometes a ingresar informacion veraz, proteger tus credenciales de acceso y usar
           la plataforma de forma responsable. Puedes solicitar la actualizacion o eliminacion de tu informacion

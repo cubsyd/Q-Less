@@ -46,6 +46,12 @@
           </button>
         </div>
 
+        <div class="forgot-row">
+          <button type="button" routerLink="/forgot-password">
+            Olvide mi contrasena
+          </button>
+        </div>
+
         <button type="submit" class="login-button" [disabled]="isLoading">
           {{ isLoading ? 'Iniciando...' : 'Inicia sesion' }}
         </button>
