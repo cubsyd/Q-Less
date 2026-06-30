@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
@@ -142,6 +144,114 @@ class AuthController extends Controller
         ]);
     }
 
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+        ]);
+
+        $email = Str::lower(trim((string) $request->email));
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No existe una cuenta registrada con ese correo.',
+            ], 404);
+        }
+
+        $token = Str::random(64);
+
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $email],
+            [
+                'token' => Hash::make($token),
+                'created_at' => now(),
+            ]
+        );
+
+        $frontendUrl = rtrim((string) env('FRONTEND_URL', $request->headers->get('origin', 'http://localhost:4200')), '/');
+        $resetUrl = $frontendUrl . '/reset-password?email=' . urlencode($email) . '&token=' . urlencode($token);
+
+        try {
+            Mail::html($this->passwordResetEmailHtml($user, $resetUrl), function ($message) use ($email, $user) {
+                $message
+                    ->to($email, $user->name)
+                    ->subject('Restablece tu contrasena en Q-LESS');
+            });
+        } catch (\Throwable $exception) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'No se pudo enviar el correo de recuperacion. Revisa la configuracion SMTP e intenta de nuevo.',
+                'error' => $exception->getMessage(),
+            ], 500);
+        }
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Te enviamos un enlace para restablecer tu contrasena.',
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+            'token' => 'required|string',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).+$/',
+            ],
+        ], [
+            'password.min' => 'La contrasena debe tener minimo 8 caracteres.',
+            'password.regex' => 'La contrasena debe incluir mayuscula, minuscula, numero y simbolo especial.',
+            'password.confirmed' => 'Las contrasenas no coinciden.',
+        ]);
+
+        $email = Str::lower(trim((string) $request->email));
+        $reset = DB::table('password_reset_tokens')->where('email', $email)->first();
+
+        if (!$reset || !Hash::check((string) $request->token, $reset->token)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'El enlace de recuperacion no es valido.',
+            ], 422);
+        }
+
+        if (now()->diffInMinutes(\Carbon\Carbon::parse($reset->created_at)) > 60) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+            return response()->json([
+                'status' => false,
+                'message' => 'El enlace de recuperacion expiro. Solicita uno nuevo.',
+            ], 422);
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if (!$user) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No existe una cuenta registrada con ese correo.',
+            ], 404);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Contrasena actualizada correctamente. Ya puedes iniciar sesion.',
+        ]);
+    }
+
     private function serializeUser(User $user): array
     {
         return [
@@ -152,5 +262,41 @@ class AuthController extends Controller
             'bio' => $user->bio,
             'profile_photo_url' => $user->profile_photo_path,
         ];
+    }
+
+    private function passwordResetEmailHtml(User $user, string $resetUrl): string
+    {
+        $safeName = e($user->name);
+        $safeUrl = e($resetUrl);
+
+        return <<<HTML
+        <div style="margin:0;padding:32px;background:#edf7df;font-family:Arial,sans-serif;color:#1f3d24;">
+          <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #cce8b2;box-shadow:0 16px 36px rgba(47,143,53,.16);">
+            <div style="padding:28px;background:linear-gradient(135deg,#35a043,#79c81a);color:#ffffff;text-align:center;">
+              <h1 style="margin:0;font-size:34px;letter-spacing:1px;">Q-LESS</h1>
+              <p style="margin:8px 0 0;font-size:16px;">Recuperacion de contrasena</p>
+            </div>
+            <div style="padding:30px;">
+              <h2 style="margin:0 0 12px;color:#1f3d24;font-size:24px;">Hola, {$safeName}</h2>
+              <p style="margin:0 0 16px;line-height:1.6;color:#4b5d43;">
+                Recibimos una solicitud para restablecer la contrasena de tu cuenta en Q-LESS.
+                Usa el siguiente boton para crear una nueva contrasena segura.
+              </p>
+              <div style="text-align:center;margin:28px 0;">
+                <a href="{$safeUrl}" style="display:inline-block;padding:14px 24px;border-radius:12px;background:linear-gradient(135deg,#35a043,#79c81a);color:#ffffff;text-decoration:none;font-weight:700;">
+                  Restablecer contrasena
+                </a>
+              </div>
+              <p style="margin:0 0 12px;line-height:1.6;color:#4b5d43;">
+                Este enlace vence en 60 minutos. Si no solicitaste este cambio, puedes ignorar este mensaje.
+              </p>
+              <p style="margin:18px 0 0;font-size:13px;line-height:1.5;color:#6c7a58;">
+                Si el boton no funciona, copia y pega este enlace en tu navegador:<br>
+                <span style="word-break:break-all;color:#2f8f35;">{$safeUrl}</span>
+              </p>
+            </div>
+          </div>
+        </div>
+        HTML;
     }
 }
