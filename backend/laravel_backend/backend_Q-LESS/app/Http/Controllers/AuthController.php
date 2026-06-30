@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -174,17 +175,13 @@ class AuthController extends Controller
         $resetUrl = $frontendUrl . '/reset-password?email=' . urlencode($email) . '&token=' . urlencode($token);
 
         try {
-            Mail::html($this->passwordResetEmailHtml($user, $resetUrl), function ($message) use ($email, $user) {
-                $message
-                    ->to($email, $user->name)
-                    ->subject('Restablece tu contrasena en Q-LESS');
-            });
+            $this->sendPasswordResetEmail($user, $resetUrl);
         } catch (\Throwable $exception) {
             DB::table('password_reset_tokens')->where('email', $email)->delete();
 
             return response()->json([
                 'status' => false,
-                'message' => 'No se pudo enviar el correo de recuperacion. Revisa la configuracion SMTP e intenta de nuevo.',
+                'message' => 'No se pudo enviar el correo de recuperacion. Revisa BREVO_API_KEY o la configuracion de correo e intenta de nuevo.',
                 'error' => $exception->getMessage(),
             ], 500);
         }
@@ -298,5 +295,48 @@ class AuthController extends Controller
           </div>
         </div>
         HTML;
+    }
+
+    private function sendPasswordResetEmail(User $user, string $resetUrl): void
+    {
+        $html = $this->passwordResetEmailHtml($user, $resetUrl);
+        $subject = 'Restablece tu contrasena en Q-LESS';
+        $apiKey = env('BREVO_API_KEY') ?: env('SENDINBLUE_API_KEY');
+
+        if ($apiKey) {
+            $fromEmail = env('MAIL_FROM_ADDRESS', $this->adminEmail);
+            $fromName = env('MAIL_FROM_NAME', 'Q-LESS');
+
+            $response = Http::timeout(20)
+                ->withHeaders([
+                    'api-key' => $apiKey,
+                    'accept' => 'application/json',
+                    'content-type' => 'application/json',
+                ])
+                ->post('https://api.brevo.com/v3/smtp/email', [
+                    'sender' => [
+                        'name' => $fromName,
+                        'email' => $fromEmail,
+                    ],
+                    'to' => [[
+                        'email' => $user->email,
+                        'name' => $user->name,
+                    ]],
+                    'subject' => $subject,
+                    'htmlContent' => $html,
+                ]);
+
+            if ($response->failed()) {
+                throw new \RuntimeException('Brevo API error ' . $response->status() . ': ' . $response->body());
+            }
+
+            return;
+        }
+
+        Mail::html($html, function ($message) use ($user, $subject) {
+            $message
+                ->to($user->email, $user->name)
+                ->subject($subject);
+        });
     }
 }
