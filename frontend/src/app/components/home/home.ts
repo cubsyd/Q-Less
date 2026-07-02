@@ -18,7 +18,7 @@ import { environment } from '../../../environments/environment';
   styleUrls: ['./home.css']
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  readonly mobileAppDownloadUrl = 'https://github.com/AnderFelipeOrtiz2004/Q-Less/releases/download/v0.2.7-mobile/Q-LESS-v0.2.7-release.apk';
+  readonly mobileAppDownloadUrl = 'https://github.com/AnderFelipeOrtiz2004/Q-Less/raw/main/mobile_flutter/releases/Q-LESS-v2.9.3-mobile.apk';
 
   readonly categories = [
     'Todos',
